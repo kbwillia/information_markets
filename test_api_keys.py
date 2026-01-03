@@ -171,23 +171,56 @@ def test_polymarket_api():
         from src.config import Config
         from src.data_collectors.polymarket_client import PolymarketClient
         
-        # Check if API key is set
-        if not Config.POLYMARKET_API_KEY:
+        # Check if credentials are set
+        has_api_key = bool(Config.POLYMARKET_API_KEY)
+        has_secret = bool(Config.POLYMARKET_API_SECRET)
+        has_passphrase = bool(Config.POLYMARKET_API_PASSPHRASE)
+        has_private_key = bool(Config.POLYMARKET_PRIVATE_KEY)
+        
+        if not has_api_key:
             print_warning("Polymarket API key not configured (optional)")
             print_info("  Some Polymarket endpoints may work without authentication")
-            print_info("  Set POLYMARKET_API_KEY in .env for authenticated endpoints")
+            print_info("  Set POLYMARKET_API_KEY, POLYMARKET_API_SECRET, POLYMARKET_API_PASSPHRASE, and POLYMARKET_PRIVATE_KEY in .env for authenticated endpoints")
+        else:
+            print_success("Polymarket API key configured")
+            all_creds = has_secret and has_passphrase and has_private_key
+            if all_creds:
+                print_success("  All credentials configured (API key, secret, passphrase, private key)")
+            else:
+                print_warning("  Missing some credentials - some authenticated endpoints may not work")
+                if not has_secret:
+                    print_info("    Set POLYMARKET_API_SECRET in .env")
+                if not has_passphrase:
+                    print_info("    Set POLYMARKET_API_PASSPHRASE in .env")
+                if not has_private_key:
+                    print_info("    Set POLYMARKET_PRIVATE_KEY in .env")
         
-        print_info(f"Base URL: {Config.POLYMARKET_BASE_URL}")
+        print_info(f"Base URL (default): {Config.POLYMARKET_BASE_URL}")
+        print_info(f"  CLOB URL: {Config.POLYMARKET_CLOB_URL}")
+        print_info(f"  Gamma URL: {Config.POLYMARKET_GAMMA_URL}")
+        print_info(f"  Data URL: {Config.POLYMARKET_DATA_URL}")
         if Config.POLYMARKET_API_KEY:
             print_info(f"API Key: {Config.POLYMARKET_API_KEY[:10]}...{Config.POLYMARKET_API_KEY[-4:]}")
+            if Config.POLYMARKET_API_SECRET:
+                print_info(f"Secret: {Config.POLYMARKET_API_SECRET[:10]}...{Config.POLYMARKET_API_SECRET[-4:]}")
+            if Config.POLYMARKET_API_PASSPHRASE:
+                print_info(f"Passphrase: {'*' * len(Config.POLYMARKET_API_PASSPHRASE)}")
+            if Config.POLYMARKET_PRIVATE_KEY:
+                # Show first and last few chars of private key (could be long)
+                priv_key = Config.POLYMARKET_PRIVATE_KEY
+                if len(priv_key) > 20:
+                    print_info(f"Private Key: {priv_key[:10]}...{priv_key[-10:]}")
+                else:
+                    print_info(f"Private Key: {'*' * len(priv_key)}")
         
         # Initialize client
         print_info("Initializing Polymarket client...")
         client = PolymarketClient()
         
-        # Test 1: Get markets (public endpoint)
-        print_info("\nTest 1: Fetching markets (public endpoint)...")
+        # Test 1: Get markets (public endpoint) - use Gamma API for market discovery
+        print_info("\nTest 1: Fetching markets (public endpoint - using Gamma API)...")
         try:
+            client.use_gamma_api()  # Switch to Gamma API for market discovery
             markets = client.get_markets(limit=5)
             market_list = markets.get("markets", []) if isinstance(markets, dict) else markets
             market_count = len(market_list) if isinstance(market_list, list) else 0
@@ -210,9 +243,12 @@ def test_polymarket_api():
             return False
         
         # Test 2: Get user balance (requires authentication)
+        # Note: Balance might be on CLOB API, not Data API
         if Config.POLYMARKET_API_KEY:
             print_info("\nTest 2: Checking account balance (authenticated endpoint)...")
+            print_info("  Trying CLOB API first (balance may be on CLOB, not Data API)...")
             try:
+                client.use_clob_api()  # Try CLOB API first
                 balance = client.get_user_balance()
                 print_success("Account balance retrieved - Authentication successful!")
                 print_info(f"  Balance data: {balance}")

@@ -21,7 +21,14 @@ class Config:
     
     # Polymarket API
     POLYMARKET_API_KEY = os.getenv('POLYMARKET_API_KEY', '')
-    POLYMARKET_BASE_URL = os.getenv('POLYMARKET_BASE_URL', 'https://clob.polymarket.com')
+    POLYMARKET_API_SECRET = os.getenv('POLYMARKET_API_SECRET', '')
+    POLYMARKET_API_PASSPHRASE = os.getenv('POLYMARKET_API_PASSPHRASE', '')
+    POLYMARKET_PRIVATE_KEY = os.getenv('POLYMARKET_PRIVATE_KEY', '')
+    # Polymarket Base URLs (hardcoded, not from .env)
+    POLYMARKET_CLOB_URL = 'https://clob.polymarket.com'  # For order management, prices, and order books
+    POLYMARKET_GAMMA_URL = 'https://gamma-api.polymarket.com'  # For market discovery, metadata, and events
+    POLYMARKET_DATA_URL = 'https://data-api.polymarket.com'  # For user positions, activity, and history
+    POLYMARKET_BASE_URL = POLYMARKET_DATA_URL  # Default to Data API
     
     # Reddit API
     REDDIT_CLIENT_ID = os.getenv('REDDIT_CLIENT_ID', '')

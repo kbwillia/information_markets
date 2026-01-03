@@ -31,7 +31,16 @@ cp config.example.env .env
    - Or set `KALSHI_PRIVATE_KEY_PEM` with the private key content directly
    - The default API URL is already configured: `https://api.elections.kalshi.com/trade-api/v2`
 
-3. Ensure Ollama is running locally:
+4. **Polymarket API Setup:**
+   - Get your API credentials from: https://polymarket.com/settings?tab=builder
+   - Create a new API key and copy all four values:
+     - `apiKey` → Set `POLYMARKET_API_KEY`
+     - `secret` → Set `POLYMARKET_API_SECRET`
+     - `passphrase` → Set `POLYMARKET_API_PASSPHRASE`
+     - `privateKey` → Set `POLYMARKET_PRIVATE_KEY`
+   - The default API URL is already configured: `https://clob.polymarket.com`
+
+5. Ensure Ollama is running locally:
 ```bash
 ollama serve
 # Pull a model: ollama pull llama3.2

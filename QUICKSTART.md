@@ -22,7 +22,8 @@ cp config.example.env .env
 # - Kalshi: Get API key ID and RSA private key from https://kalshi.com/account/profile
 #   Set KALSHI_API_KEY (your API key ID)
 #   Set KALSHI_PRIVATE_KEY_PATH (path to your .pem file) OR KALSHI_PRIVATE_KEY_PEM (key content)
-# - Polymarket API key (optional)
+# - Polymarket: Get API credentials from https://polymarket.com/settings?tab=builder
+#   Set POLYMARKET_API_KEY, POLYMARKET_API_SECRET, POLYMARKET_API_PASSPHRASE, POLYMARKET_PRIVATE_KEY
 # - Reddit API credentials (client_id, client_secret)
 ```
 
