@@ -1,0 +1,2 @@
+# Information Markets Trading Bot
+

@@ -1,0 +1,41 @@
+# Core dependencies
+requests>=2.31.0
+pandas>=2.0.0
+numpy>=1.24.0
+python-dotenv>=1.0.0
+
+# Kalshi SDK
+kalshi-python-sync>=1.0.0
+
+# Data analysis and visualization
+matplotlib>=3.7.0
+seaborn>=0.12.0
+plotly>=5.14.0
+scipy>=1.10.0
+
+# Web scraping
+beautifulsoup4>=4.12.0
+praw>=7.7.0  # Reddit API
+selenium>=4.10.0
+
+# LLM integration
+ollama>=0.1.0
+openai>=1.0.0  # Fallback option
+
+# Database
+sqlalchemy>=2.0.0
+# sqlite3 is built-in to Python, no need to install
+
+# Async support
+aiohttp>=3.8.0
+# asyncio is built-in to Python, no need to install
+
+# Utilities
+python-dateutil>=2.8.0
+pytz>=2023.3
+tqdm>=4.65.0
+
+# Testing
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+
