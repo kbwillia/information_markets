@@ -1,0 +1,57 @@
+﻿Polymarket API Cheatsheet
+Method	Path	Params / Request body
+CLOB 
+get	/book	token_id
+post	/books	body: token_id, side
+get	/price	token_id, side
+get	/prices	
+post	/prices	body: token_id, side
+get	/midpoint	token_id
+get	/prices-history	market, startTs=int, endTs=int, interval, fidelity=int
+post	/spreads	body: token_id, side
+get	prices-history	market, startTs=int, endTs=int, interval, fidelity=int
+Gamma
+get	/status	
+get	/teams	limit=int, offset=int, order, ascending=bool, league=string[], name=string[], abbreviation=string[]
+get	/sports	sport, image, resolution, ordering, tags, series
+get	/sports/market-types	
+get	/tags	limit=int, offset=int, order, ascending=bool, include_template=bool, is_carousel=bool
+get	/tags/{id}	id=int, include_template=bool
+get	/tags/slug/{slug}	slug, include_template=bool
+get	/tags/{id}/related-tags	id, omit_empty=bool, status
+get	/tags/slug/{slug}/related-tags	slug, omit_empty=bool, status
+get	/tags/{id}/related-tags/tags	id, omit_empty=bool, status
+get	/tags/slug/{slug}/related-tags/tags	slug, omit_empty=bool, status
+get	/events	limit=int, offset=int, order, ascending=bool, id=int[], tag_id=int, exclude_tag_id=int[], slug=string[], tag_slug, related_tags=bool, active=bool, archived=bool, featured=bool, cyom=bool, include_chat=bool,  include_template=bool, recurrence, closed=bool, liquidity_min=int, liquidity_max=int, volume_min=int, volume_max=int, start_date_min, start_date_max, end_date_min, end_date_max
+get	/events/{id}	id=int, include_chat=bool, include_template=bool
+get	/events/{id}/tags	id=int
+get	/events/slug/{slug}	slug, include_chat=bool, include_template=bool
+get	/markets	imit=int, offset=int, order, ascending=bool, id=int[], slug=string[], clob_token_ids=string[], condition_ids=string[], market_maker_address=string[], liquidity_num_min=int, liquidity_num_max=int, volume_num_min=int, volume_num_max=int, start_date_min, start_date_max, end_date_min, end_date_max, tag_id=int, related_tags=bool, cyom=bool, uma_resolution_status, game_id, sports_market_types=string[], rewards_min_size=int, question_ids=string[], include_tag=bool, closed=bool
+get	/markets/{id}	slug, include_tag=bool
+get	/markets/{id}/tags	id=int, 
+get	/markets/slug/{slug}	
+get	/series	limit=int, offset=int, order, ascending=bool, slug=string[], categories_ids=int[], categories_labels=string[], closed=bool, include_chat=bool, recurrence
+get	/series/{id}	id=int, include_chat=bool, 
+get	/comments	limit=int, offset=int, order, ascending=bool, parent_entity_type, parent_entity_id=int, get_positions=bool, holders_only=bool
+get	/comments/{id}	id=int, get_positions=bool
+get	/comments/user_address/{user_address}	user_address, limit=int, offset=int, order, ascending=bool
+get	/public-profile	address
+get	/public-search	q, cache=bool, events_status, limit_per_type=int, page=int, events_tag=string[], keep_closed_markets=int, sort, ascending=bool, search_tags=bool, search_profiles=bool, recurrence, exclude_tag_id=int[], optimized=bool
+Data-API
+get	/	
+get	/positions	user, market=string[], eventId=int[], sizeThreshold=int, redeemable=bool, mergeable=bool, limit=int, offset=int, sortBy, sortDirection, title
+get	/trades	limit=int, offset=int, takerOnly=bool, filterType, filterAmount=int, market=string[], eventId=int[], user, side
+get	/activity	limit=int, offset=int, user, market=string[], eventId=int[], type=string[], start=int, end=int, sortBy, sortDirection, side
+get	/holders	limit=int, market=string[], minBalance=int
+get	/value	user, market=string[]
+get	/v1/closed-positions	user, market=string[], title, eventId=int[], limit=int, offset=int, sortBy, sortDirection
+get	/v1/leaderboard	category, timePeriod, orderBy, limit=int, offset=int, user, userName
+get	/traded	user
+get	/oi	market=string[]
+get	/live-volume	id=int, 
+get	/v1/builders/leaderboard	timePeriod, limit=int, offset=int
+get	/v1/builders/volume	timePeriod
+Bridge & Swap
+post	/deposit	body: address
+get	/supported-assets	
+
