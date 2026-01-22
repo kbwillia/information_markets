@@ -256,6 +256,15 @@ class StrategyRunner:
         if len(self.run_history) > 100:
             self.run_history = self.run_history[-100:]
         
+        # Update signal and trade history
+        self.signal_history.extend(all_signals)
+        if len(self.signal_history) > 1000:
+            self.signal_history = self.signal_history[-1000:]
+        
+        self.trade_history.extend(all_results)
+        if len(self.trade_history) > 1000:
+            self.trade_history = self.trade_history[-1000:]
+        
         # Log
         self._log_cycle(stats, all_signals, all_results)
         

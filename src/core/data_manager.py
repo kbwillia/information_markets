@@ -10,6 +10,7 @@ This is the SINGLE entry point for all market data. It:
 import threading
 import time
 import re
+import json
 from typing import Dict, List, Optional, Tuple, Callable
 from datetime import datetime, timedelta
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -274,9 +275,12 @@ class DataManager:
     
     def _refresh_kalshi_markets(self):
         """Refresh Kalshi market data."""
+        if not self.kalshi:
+            print("Skipping Kalshi refresh: client not available (check API keys in .env)")
+            return
         try:
             response = self.kalshi.get_markets(limit=200)
-            markets = response.get('markets', [])
+            markets = response.get('markets', []) if isinstance(response, dict) else []
             
             if markets:
                 self.cache.set('kalshi', 'markets', markets)
@@ -311,9 +315,18 @@ class DataManager:
     
     def _refresh_polymarket_markets(self):
         """Refresh Polymarket market data."""
+        if not self.polymarket:
+            print("Skipping Polymarket refresh: client not available")
+            return
         try:
             response = self.polymarket.get_markets(limit=200)
-            markets = response.get('markets', response.get('data', []))
+            # Handle different response formats
+            if isinstance(response, list):
+                markets = response
+            elif isinstance(response, dict):
+                markets = response.get('markets', response.get('data', []))
+            else:
+                markets = []
             
             if markets:
                 self.cache.set('polymarket', 'markets', markets)
@@ -325,12 +338,28 @@ class DataManager:
                         self.cache.set('polymarket', 'market', m, identifier=market_id)
                         
                         # Extract price (Polymarket uses 0-1)
-                        yes_price = m.get('outcomePrices', [0])[0] if m.get('outcomePrices') else None
-                        if yes_price is None:
-                            yes_price = m.get('yes_price') or m.get('price')
+                        # Handle different price field formats
+                        yes_price = None
+                        if isinstance(m, dict):
+                            outcome_prices = m.get('outcomePrices')
+                            
+                            # Handle JSON string format (e.g., '["0", "0"]')
+                            if isinstance(outcome_prices, str):
+                                try:
+                                    outcome_prices = json.loads(outcome_prices)
+                                except (json.JSONDecodeError, ValueError):
+                                    outcome_prices = []
+                            
+                            if outcome_prices and isinstance(outcome_prices, list) and len(outcome_prices) > 0:
+                                yes_price = outcome_prices[0]
+                            if yes_price is None:
+                                yes_price = m.get('yes_price') or m.get('price')
                         
-                        if yes_price:
-                            price = float(yes_price)
+                        if yes_price is not None:
+                            price = self._safe_price(yes_price, 'polymarket')
+                            if price is None:
+                                # Skip if price can't be converted
+                                continue
                             
                             # Check for price change
                             old_price = self.get_price('polymarket', market_id)
@@ -442,19 +471,35 @@ class DataManager:
             return None
         
         try:
-            # Try ISO format first
-            if 'T' in date_str or '+' in date_str or 'Z' in date_str:
-                # Remove timezone info for simplicity
-                date_str_clean = date_str.replace('Z', '').split('+')[0].split('-')[0]
-                return datetime.fromisoformat(date_str_clean)
+            # Try ISO format first (with timezone)
+            if 'T' in date_str:
+                # Handle ISO format with or without timezone
+                if date_str.endswith('Z'):
+                    date_str_clean = date_str.replace('Z', '+00:00')
+                elif '+' in date_str or date_str.count('-') >= 3:
+                    # Already has timezone or is ISO format
+                    date_str_clean = date_str
+                else:
+                    # ISO format without timezone
+                    date_str_clean = date_str
+                
+                try:
+                    return datetime.fromisoformat(date_str_clean.replace('Z', '+00:00'))
+                except ValueError:
+                    # Try without timezone
+                    date_str_no_tz = date_str.split('+')[0].split('-')[0] if '-' in date_str else date_str
+                    date_str_no_tz = date_str_no_tz.replace('Z', '').strip()
+                    if date_str_no_tz:
+                        return datetime.fromisoformat(date_str_no_tz)
             else:
                 # Try other common formats
-                for fmt in ['%Y-%m-%d', '%Y-%m-%d %H:%M:%S', '%m/%d/%Y']:
+                for fmt in ['%Y-%m-%d', '%Y-%m-%d %H:%M:%S', '%m/%d/%Y', '%Y-%m-%dT%H:%M:%S']:
                     try:
                         return datetime.strptime(date_str, fmt)
                     except ValueError:
                         continue
-        except Exception:
+        except Exception as e:
+            # If all parsing fails, return None
             pass
         
         return None
@@ -607,13 +652,45 @@ class DataManager:
             )
         else:  # polymarket
             outcome_prices = raw.get('outcomePrices', [])
+            
+            # Safely extract prices - handle various formats
+            yes_price = None
+            no_price = None
+            
+            if outcome_prices:
+                # Handle JSON string format (e.g., '["0", "0"]')
+                if isinstance(outcome_prices, str):
+                    try:
+                        outcome_prices = json.loads(outcome_prices)
+                    except (json.JSONDecodeError, ValueError):
+                        outcome_prices = []
+                
+                # Handle list format
+                if isinstance(outcome_prices, list) and len(outcome_prices) > 0:
+                    try:
+                        yes_price_val = outcome_prices[0]
+                        yes_price = self._safe_price(yes_price_val, platform)
+                    except (ValueError, TypeError, IndexError):
+                        pass
+                
+                if isinstance(outcome_prices, list) and len(outcome_prices) > 1:
+                    try:
+                        no_price_val = outcome_prices[1]
+                        no_price = self._safe_price(no_price_val, platform)
+                    except (ValueError, TypeError, IndexError):
+                        pass
+            
+            # Fallback to other price fields
+            if yes_price is None:
+                yes_price = self._safe_price(raw.get('yes_price') or raw.get('price'), platform)
+            
             return MarketData(
                 id=raw.get('id') or raw.get('condition_id', ''),
                 platform=platform,
                 title=raw.get('question', raw.get('title', '')),
                 description=raw.get('description', ''),
-                yes_price=float(outcome_prices[0]) if outcome_prices else None,
-                no_price=float(outcome_prices[1]) if len(outcome_prices) > 1 else None,
+                yes_price=yes_price,
+                no_price=no_price,
                 yes_bid=None,  # Need orderbook for this
                 yes_ask=None,
                 volume=raw.get('volume'),
@@ -628,7 +705,23 @@ class DataManager:
         """Safely convert price to 0-1 scale."""
         if price is None:
             return None
-        price = float(price)
+        
+        # Handle string representations
+        if isinstance(price, str):
+            # Skip if it looks like a list or other invalid format
+            price_str = price.strip()
+            if not price_str or price_str[0] in ['[', '{', '(']:
+                return None
+            try:
+                price = float(price_str)
+            except (ValueError, TypeError):
+                return None
+        else:
+            try:
+                price = float(price)
+            except (ValueError, TypeError):
+                return None
+        
         if platform == 'kalshi' and price > 1:
             return price / 100  # Kalshi uses cents
         return price

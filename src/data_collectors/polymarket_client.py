@@ -38,18 +38,41 @@ class PolymarketClient:
             json=data
         )
         response.raise_for_status()
-        return response.json()
+        try:
+            return response.json()
+        except ValueError as e:
+            # Handle cases where response is not valid JSON
+            print(f"Warning: Response is not valid JSON: {e}")
+            print(f"Response text (first 500 chars): {response.text[:500]}")
+            return {}
     
     def get_markets(self, limit: int = 100, offset: int = 0) -> Dict:
         """Get available markets."""
-        result = self._request("GET", "/markets", {
-            "limit": limit,
-            "offset": offset
-        })
-        # Polymarket returns data in 'data' field, normalize to 'markets' for consistency
-        if isinstance(result, dict) and 'data' in result and 'markets' not in result:
-            result['markets'] = result.pop('data')
-        return result
+        # Gamma API is the correct API for market listings
+        original_url = self.base_url
+        try:
+            self.use_gamma_api()
+            result = self._request("GET", "/markets", {
+                "limit": limit,
+                "offset": offset
+            })
+            # Polymarket Gamma API may return list directly or dict with 'data'
+            if isinstance(result, list):
+                return {'markets': result, 'data': result}
+            elif isinstance(result, dict):
+                # Normalize to 'markets' field for consistency
+                if 'data' in result and 'markets' not in result:
+                    result['markets'] = result['data']
+                elif 'markets' not in result:
+                    # If neither exists, wrap in markets
+                    result = {'markets': result, 'data': result}
+            return result
+        except Exception as e:
+            # If Gamma API fails, return empty result instead of raising
+            print(f"Warning: Could not fetch Polymarket markets from Gamma API: {e}")
+            return {'markets': [], 'data': []}
+        finally:
+            self.base_url = original_url
     
     def get_market(self, market_id: str) -> Dict:
         """Get specific market by ID."""
@@ -502,6 +525,75 @@ class PolymarketClient:
             if side:
                 params["side"] = side
             return self._request("GET", "/trades", params)
+        finally:
+            self.base_url = original_url
+    
+    def get_history(self, token_id: str, start_time: datetime = None, 
+                   end_time: datetime = None, fidelity: int = 2) -> Dict:
+        """
+        Get price history of a token between a date range (max 15 days).
+        
+        Args:
+            token_id: Token/condition ID
+            start_time: Start datetime (default: 15 days ago)
+            end_time: End datetime (default: now)
+            fidelity: Data point density (1-3, default: 2)
+        
+        Returns:
+            Dict with price history data
+        """
+        original_url = self.base_url
+        self.use_data_api()
+        try:
+            params = {'fidelity': fidelity}
+            if start_time:
+                params['start_time'] = int(start_time.timestamp() * 1000)
+            if end_time:
+                params['end_time'] = int(end_time.timestamp() * 1000)
+            
+            # Use Gamma API for history endpoint
+            self.use_gamma_api()
+            return self._request("GET", f"/tokens/{token_id}/history", params)
+        finally:
+            self.base_url = original_url
+    
+    def get_all_history(self, token_id: str) -> Dict:
+        """
+        Get the full price history of a token.
+        
+        Args:
+            token_id: Token/condition ID
+        
+        Returns:
+            Dict with full price history
+        """
+        original_url = self.base_url
+        self.use_gamma_api()
+        try:
+            return self._request("GET", f"/tokens/{token_id}/history/all")
+        finally:
+            self.base_url = original_url
+    
+    def get_recent_history(self, token_id: str, 
+                          interval: str = '1d', fidelity: int = 1) -> Dict:
+        """
+        Get recent price history of a token.
+        
+        Args:
+            token_id: Token/condition ID
+            interval: Time interval ('1h', '6h', '1d', '1w', '1m', 'max')
+            fidelity: Data point density (1-3, default: 1)
+        
+        Returns:
+            Dict with recent price history
+        """
+        original_url = self.base_url
+        self.use_gamma_api()
+        try:
+            return self._request("GET", f"/tokens/{token_id}/history/recent", {
+                'interval': interval,
+                'fidelity': fidelity
+            })
         finally:
             self.base_url = original_url
     

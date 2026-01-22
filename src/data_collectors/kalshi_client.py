@@ -87,8 +87,9 @@ class KalshiClient:
         self.client = KalshiSDKClient(config)
     
     def get_markets(self, limit: int = 100, cursor: str = None, **kwargs) -> Dict:
-        """Get available markets."""
+        """Get available markets using the SDK."""
         try:
+            # Try SDK first - it handles auth properly
             response = self.client.get_markets(limit=limit, cursor=cursor, **kwargs)
             # Convert SDK response to dict format
             if hasattr(response, 'dict'):
@@ -97,7 +98,70 @@ class KalshiClient:
                 return {k: v for k, v in response.__dict__.items() if not k.startswith('_')}
             return response
         except Exception as e:
-            raise Exception(f"Error getting markets: {e}")
+            # Handle Pydantic validation errors (None values in required fields)
+            error_str = str(e)
+            if 'validation' in error_str.lower() or 'string_type' in error_str or 'int_type' in error_str:
+                # SDK validation failed - get raw response using SDK's REST client
+                # This way we still use SDK auth but bypass validation
+                try:
+                    from kalshi_python_sync.api.market_api import MarketApi
+                    import json
+                    
+                    # Use SDK's MarketApi to get raw response
+                    market_api = MarketApi(self.client.api_client if hasattr(self.client, 'api_client') else None)
+                    if market_api.api_client is None:
+                        market_api.api_client = self.client.api_client if hasattr(self.client, 'api_client') else self.client
+                    
+                    # Get raw response without preload (bypasses validation)
+                    raw_response = market_api.get_markets_without_preload_content(
+                        limit=limit,
+                        cursor=cursor,
+                        **{k: v for k, v in kwargs.items() if k in ['event_ticker', 'series_ticker', 'status', 'tickers']}
+                    )
+                    
+                    # Parse JSON response
+                    data = json.loads(raw_response.data)
+                    
+                    # Clean None values to match SDK model requirements
+                    if isinstance(data, dict) and 'markets' in data:
+                        for market in data['markets']:
+                            if isinstance(market, dict):
+                                if market.get('category') is None:
+                                    market['category'] = 'Uncategorized'
+                                if market.get('risk_limit_cents') is None:
+                                    market['risk_limit_cents'] = 0
+                    
+                    return data
+                except Exception as e2:
+                    # If that fails, try using the SDK's REST client directly
+                    try:
+                        if hasattr(self.client, 'api_client') and hasattr(self.client.api_client, 'rest_client'):
+                            rest_client = self.client.api_client.rest_client
+                            # Make request using SDK's authenticated REST client
+                            url = f"{self.host}/exchange/markets"
+                            params = {'limit': limit}
+                            if cursor:
+                                params['cursor'] = cursor
+                            
+                            # Use SDK's REST client (handles auth)
+                            response = rest_client.GET(url, query_params=params)
+                            data = json.loads(response.data)
+                            
+                            # Clean None values
+                            if isinstance(data, dict) and 'markets' in data:
+                                for market in data['markets']:
+                                    if isinstance(market, dict):
+                                        if market.get('category') is None:
+                                            market['category'] = 'Uncategorized'
+                                        if market.get('risk_limit_cents') is None:
+                                            market['risk_limit_cents'] = 0
+                            
+                            return data
+                    except Exception as e3:
+                        print(f"Warning: Kalshi SDK validation error. Tried SDK methods but all failed: {e3}")
+                        return {'markets': [], 'cursor': None}
+            else:
+                raise Exception(f"Error getting markets: {e}")
     
     def get_market(self, ticker: str) -> Dict:
         """Get specific market by ticker."""
