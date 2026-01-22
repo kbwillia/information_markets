@@ -1,282 +1,7159 @@
-# Kalshi SDK Complete Reference
+# Kalshi SDK - Complete Reference
 
-This document contains a complete reference of all methods, classes, and APIs available in the `kalshi-python-sync` SDK.
+> Comprehensive reference of all methods and classes in the `kalshi-python-sync` SDK
+> Package: https://pypi.org/project/kalshi-python-sync/
 
-## Table of Contents
+---
 
-- [Installation](#installation)
-- [Quick Start](#quick-start)
-- [Configuration](#configuration)
-- [Client Classes](#client-classes)
-- [API Modules](#api-modules)
-- [Models/Schemas](#modelsschemas)
-- [Method Reference](#method-reference)
+## Package Information
 
-## Installation
-
-```bash
-pip install kalshi-python-sync
-```
-
-## Quick Start
-
-```python
-from kalshi_python_sync import Configuration, KalshiClient
-
-# Configure
-config = Configuration(host="https://api.elections.kalshi.com/trade-api/v2")
-config.api_key_id = "your-api-key-id"
-config.private_key_pem = "your-private-key-pem-content"
-
-# Initialize client
-client = KalshiClient(config)
-
-# Use the client
-markets = client.market_api.get_markets(limit=10)
-```
+**Package Name:** `kalshi-python-sync`
+**SDK Location:** C:\Users\kbwil\Documents\Data_Projects\information_markets\information_markets\venv312\Lib\site-packages\kalshi_python_sync\__init__.py
+**Version:** 3.2.0
 
 ## Configuration
 
-### Configuration Class
 
-The `Configuration` class is used to set up authentication and API settings.
+================================================================================
+## Configuration
+================================================================================
 
-**Attributes:**
-- `host` (str): API base URL
-- `api_key_id` (str): Your Kalshi API key ID
-- `private_key_pem` (str): Your RSA private key content
+This class contains various settings of the API client.
 
-## Client Classes
+    :param host: Base url.
+    :param ignore_operation_servers
+      Boolean to ignore operation servers for the API client.
+      Config will use `host` as the base url regardless of the operation servers.
+    :param api_key: Dict to store API key(s).
+      Each entry in the dict specifies an API key.
+      The dict key is the name of the security scheme in the OAS specification.
+      The dict value is the API key secret.
+    :param api_key_prefix: Dict to store API prefix (e.g. Bearer).
+      The dict key is the name of the security scheme in the OAS specification.
+      The dict value is an API key prefix when generating the auth data.
+    :param username: Username for HTTP basic authentication.
+    :param password: Password for HTTP basic authentication.
+    :param access_token: Access token.
+    :param server_index: Index to servers configuration.
+    :param server_variables: Mapping with string values to replace variables in
+      templated server configuration. The validation of enums is performed for
+      variables with defined enum values before.
+    :param server_operation_index: Mapping from operation ID to an index to server
+      configuration.
+    :param server_operation_variables: Mapping from operation ID to a mapping with
+      string values to replace variables in templated server configuration.
+      The validation of enums is performed for variables with defined enum
+      values before.
+    :param ssl_ca_cert: str - the path to a file of concatenated CA certificates
+      in PEM format.
+    :param retries: Number of retries for API requests.
+    :param ca_cert_data: verify the peer using concatenated CA certificate data
+      in PEM (str) or DER (bytes) format.
+    :param cert_file: the path to a client certificate file, for mTLS.
+    :param key_file: the path to a client key file, for mTLS. 
 
-### KalshiClient
+    :Example:
 
-Main client class for interacting with the Kalshi API.
+    API Key Authentication Example.
+    Given the following security scheme in the OpenAPI specification:
+      components:
+        securitySchemes:
+          cookieAuth:         # name for the security scheme
+            type: apiKey
+            in: cookie
+            name: JSESSIONID  # cookie name
 
-**API Modules:**
-- `client.market_api` - Market operations
-- `client.portfolio_api` - Portfolio operations  
-- `client.exchange_api` - Exchange operations
+    You can programmatically set the cookie:
 
-## API Modules
+conf = kalshi_python_sync.Configuration(
+    api_key={'cookieAuth': 'abc123'}
+    api_key_prefix={'cookieAuth': 'JSESSIONID'}
+)
 
-### MarketApi
+    The following cookie will be added to the HTTP request:
+       Cookie: JSESSIONID abc123
 
-Methods for market-related operations.
+### Initialization Parameters
 
-**Methods:**
-*(Run `python explore_kalshi_sdk.py` to generate complete list)*
-
-### PortfolioApi
-
-Methods for portfolio and account operations.
-
-**Methods:**
-*(Run `python explore_kalshi_sdk.py` to generate complete list)*
-
-### ExchangeApi
-
-Methods for exchange status and information.
-
-**Methods:**
-*(Run `python explore_kalshi_sdk.py` to generate complete list)*
-
-## Models/Schemas
-
-The SDK includes Pydantic models for request/response objects.
-
-**Common Models:**
-*(Run `python explore_kalshi_sdk.py` to generate complete list)*
-
-## Method Reference
-
-### MarketApi Methods
-
-#### get_markets()
-
-Get list of available markets.
-
-**Parameters:**
-- `limit` (int, optional): Number of markets to return
-- `cursor` (str, optional): Pagination cursor
-- `status` (str, optional): Filter by market status
-- `series_ticker` (str, optional): Filter by series ticker
-- `event_ticker` (str, optional): Filter by event ticker
-
-**Returns:** `GetMarketsResponse` object
-
-**Example:**
 ```python
-response = client.market_api.get_markets(limit=100, status="open")
-markets = response.markets
-```
-
-#### get_market(ticker)
-
-Get details for a specific market.
-
-**Parameters:**
-- `ticker` (str): Market ticker symbol
-
-**Returns:** `Market` object
-
-**Example:**
-```python
-market = client.market_api.get_market("TICKER-2024-01-01")
-```
-
-#### get_orderbook(ticker)
-
-Get orderbook for a market.
-
-**Parameters:**
-- `ticker` (str): Market ticker symbol
-
-**Returns:** `Orderbook` object
-
-**Example:**
-```python
-orderbook = client.market_api.get_orderbook("TICKER-2024-01-01")
-```
-
-#### get_market_history(ticker, limit)
-
-Get trading history for a market.
-
-**Parameters:**
-- `ticker` (str): Market ticker symbol
-- `limit` (int, optional): Number of history entries
-
-**Returns:** `MarketHistoryResponse` object
-
-**Example:**
-```python
-history = client.market_api.get_market_history("TICKER-2024-01-01", limit=100)
-```
-
-### PortfolioApi Methods
-
-#### get_portfolio()
-
-Get portfolio overview.
-
-**Returns:** `Portfolio` object
-
-**Example:**
-```python
-portfolio = client.portfolio_api.get_portfolio()
-```
-
-#### get_balance()
-
-Get account balance.
-
-**Returns:** `Balance` object
-
-**Example:**
-```python
-balance = client.portfolio_api.get_balance()
-```
-
-#### get_positions()
-
-Get current positions.
-
-**Returns:** `PositionsResponse` object
-
-**Example:**
-```python
-positions = client.portfolio_api.get_positions()
-```
-
-#### get_orders(limit, cursor, status)
-
-Get order history.
-
-**Parameters:**
-- `limit` (int, optional): Number of orders
-- `cursor` (str, optional): Pagination cursor
-- `status` (str, optional): Filter by order status
-
-**Returns:** `OrdersResponse` object
-
-**Example:**
-```python
-orders = client.portfolio_api.get_orders(limit=100, status="filled")
-```
-
-#### create_order(...)
-
-Place a new order.
-
-**Parameters:**
-- `ticker` (str): Market ticker
-- `side` (str): "yes" or "no"
-- `action` (str): "buy" or "sell"
-- `count` (int): Number of contracts
-- `price` (int, optional): Limit price in cents (0-100)
-- `yes_price` (int, optional): Yes price for market orders
-- `no_price` (int, optional): No price for market orders
-
-**Returns:** `Order` object
-
-**Example:**
-```python
-order = client.portfolio_api.create_order(
-    ticker="TICKER-2024-01-01",
-    side="yes",
-    action="buy",
-    count=10,
-    price=50  # 50 cents = $0.50
+Configuration(
+    host: typing.Optional[str] = None,
+    api_key: typing.Optional[typing.Dict[str, str]] = None,
+    api_key_prefix: typing.Optional[typing.Dict[str, str]] = None,
+    username: typing.Optional[str] = None,
+    password: typing.Optional[str] = None,
+    access_token: typing.Optional[str] = None,
+    server_index: typing.Optional[int] = None,
+    server_variables: typing.Optional[typing.Dict[str, str]] = None,
+    server_operation_index: typing.Optional[typing.Dict[int, int]] = None,
+    server_operation_variables: typing.Optional[typing.Dict[int, typing.Dict[str, str]]] = None,
+    ignore_operation_servers: <class 'bool'> = False,
+    ssl_ca_cert: typing.Optional[str] = None,
+    retries: typing.Optional[int] = None,
+    ca_cert_data: typing.Union[str, bytes, NoneType] = None,
+    cert_file: typing.Optional[str] = None,
+    key_file: typing.Optional[str] = None,
+    debug: typing.Optional[bool] = None,
 )
 ```
 
-#### cancel_order(order_id)
+### API Modules
 
-Cancel an order.
+
+## KalshiClient
+
+
+================================================================================
+## KalshiClient
+================================================================================
+
+Convenience client that combines all API classes into a single interface with Kalshi auth
+
+### Initialization Parameters
+
+```python
+KalshiClient(
+    configuration = None,
+)
+```
+
+### API Modules
+
+
+## API Classes
+
+
+================================================================================
+## ExchangeApi
+================================================================================
+
+NOTE: This class is auto generated by OpenAPI Generator
+    Ref: https://openapi-generator.tech
+
+    Do not edit the class manually.
+
+### Initialization Parameters
+
+```python
+ExchangeApi(
+    api_client = None,
+)
+```
+
+### Account
+
+#### `get_user_data_timestamp`
+
+**Signature:**
+```python
+def get_user_data_timestamp():
+```
+
+**Description:**
+
+Get User Data Timestamp
+There is typically a short delay before exchange events are reflected in the API endpoints. Whenever possible, combine API responses to PUT/POST/DELETE requests with websocket data to obtain the most accurate view of the exchange state. This endpoint provides an approximate indication of when the data from the following endpoints was last validated: GetBalance, GetOrder(s), GetFills, GetPositions
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_user_data_timestamp`
+
+**Signature:**
+```python
+def get_user_data_timestamp():
+```
+
+**Description:**
+
+Get User Data Timestamp
+There is typically a short delay before exchange events are reflected in the API endpoints. Whenever possible, combine API responses to PUT/POST/DELETE requests with websocket data to obtain the most accurate view of the exchange state. This endpoint provides an approximate indication of when the data from the following endpoints was last validated: GetBalance, GetOrder(s), GetFills, GetPositions
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_user_data_timestamp_with_http_info`
+
+**Signature:**
+```python
+def get_user_data_timestamp_with_http_info(_request_timeout: typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]] = None, _request_auth: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _content_type: typing.Optional[typing.Annotated[str, Strict(strict=True)]] = None, _headers: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _host_index: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])] = 0):
+```
 
 **Parameters:**
-- `order_id` (str): Order ID
 
-**Returns:** `CancelOrderResponse` object
+- `_request_timeout` (Optional)
+  - Type: `typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]]`
+  - Default: `None`
+- `_request_auth` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_content_type` (Optional)
+  - Type: `typing.Optional[typing.Annotated[str, Strict(strict=True)]]`
+  - Default: `None`
+- `_headers` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_host_index` (Optional)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])]`
+  - Default: `0`
 
-**Example:**
+**Description:**
+
+Get User Data Timestamp
+There is typically a short delay before exchange events are reflected in the API endpoints. Whenever possible, combine API responses to PUT/POST/DELETE requests with websocket data to obtain the most accurate view of the exchange state. This endpoint provides an approximate indication of when the data from the following endpoints was last validated: GetBalance, GetOrder(s), GetFills, GetPositions
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_user_data_timestamp_with_http_info`
+
+**Signature:**
 ```python
-result = client.portfolio_api.cancel_order("order-123")
+def get_user_data_timestamp_with_http_info(_request_timeout: typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]] = None, _request_auth: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _content_type: typing.Optional[typing.Annotated[str, Strict(strict=True)]] = None, _headers: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _host_index: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])] = 0):
 ```
 
-### ExchangeApi Methods
+**Parameters:**
 
-#### get_exchange_status()
+- `_request_timeout` (Optional)
+  - Type: `typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]]`
+  - Default: `None`
+- `_request_auth` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_content_type` (Optional)
+  - Type: `typing.Optional[typing.Annotated[str, Strict(strict=True)]]`
+  - Default: `None`
+- `_headers` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_host_index` (Optional)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])]`
+  - Default: `0`
 
-Get exchange status.
+**Description:**
 
-**Returns:** `ExchangeStatus` object
+Get User Data Timestamp
+There is typically a short delay before exchange events are reflected in the API endpoints. Whenever possible, combine API responses to PUT/POST/DELETE requests with websocket data to obtain the most accurate view of the exchange state. This endpoint provides an approximate indication of when the data from the following endpoints was last validated: GetBalance, GetOrder(s), GetFills, GetPositions
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
 
-**Example:**
+---
+
+#### `get_user_data_timestamp_without_preload_content`
+
+**Signature:**
 ```python
-status = client.exchange_api.get_exchange_status()
+def get_user_data_timestamp_without_preload_content(_request_timeout: typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]] = None, _request_auth: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _content_type: typing.Optional[typing.Annotated[str, Strict(strict=True)]] = None, _headers: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _host_index: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])] = 0):
 ```
 
-## Generating Complete Documentation
+**Parameters:**
 
-To generate a complete list of all SDK methods and classes, run:
+- `_request_timeout` (Optional)
+  - Type: `typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]]`
+  - Default: `None`
+- `_request_auth` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_content_type` (Optional)
+  - Type: `typing.Optional[typing.Annotated[str, Strict(strict=True)]]`
+  - Default: `None`
+- `_headers` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_host_index` (Optional)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])]`
+  - Default: `0`
 
-```bash
-python explore_kalshi_sdk.py > docs/sdk/KALSHI_SDK_COMPLETE.txt
+**Description:**
+
+Get User Data Timestamp
+There is typically a short delay before exchange events are reflected in the API endpoints. Whenever possible, combine API responses to PUT/POST/DELETE requests with websocket data to obtain the most accurate view of the exchange state. This endpoint provides an approximate indication of when the data from the following endpoints was last validated: GetBalance, GetOrder(s), GetFills, GetPositions
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_user_data_timestamp_without_preload_content`
+
+**Signature:**
+```python
+def get_user_data_timestamp_without_preload_content(_request_timeout: typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]] = None, _request_auth: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _content_type: typing.Optional[typing.Annotated[str, Strict(strict=True)]] = None, _headers: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _host_index: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])] = 0):
 ```
 
-This will output all available methods, their signatures, and parameters.
+**Parameters:**
 
-## Additional Resources
+- `_request_timeout` (Optional)
+  - Type: `typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]]`
+  - Default: `None`
+- `_request_auth` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_content_type` (Optional)
+  - Type: `typing.Optional[typing.Annotated[str, Strict(strict=True)]]`
+  - Default: `None`
+- `_headers` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_host_index` (Optional)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])]`
+  - Default: `0`
 
-- [Kalshi API Documentation](https://trade-api.kalshi.com/trade-api/documentation)
-- [Kalshi Python SDK on PyPI](https://pypi.org/project/kalshi-python-sync/)
-- [Kalshi GitHub Repository](https://github.com/Kalshi/kalshi-python-sync) (if available)
+**Description:**
 
-## Notes
+Get User Data Timestamp
+There is typically a short delay before exchange events are reflected in the API endpoints. Whenever possible, combine API responses to PUT/POST/DELETE requests with websocket data to obtain the most accurate view of the exchange state. This endpoint provides an approximate indication of when the data from the following endpoints was last validated: GetBalance, GetOrder(s), GetFills, GetPositions
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
 
-- All timestamps are in Unix epoch format (seconds since 1970-01-01)
-- Prices are in cents (0-100 range, where 100 = $1.00)
-- The SDK uses Pydantic for request/response validation
-- Date filtering parameters may not be supported - filter client-side if needed
+---
 
+### Exchange
+
+#### `get_exchange_announcements`
+
+**Signature:**
+```python
+def get_exchange_announcements():
+```
+
+**Description:**
+
+Get Exchange Announcements
+Endpoint for getting all exchange-wide announcements.
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_exchange_announcements`
+
+**Signature:**
+```python
+def get_exchange_announcements():
+```
+
+**Description:**
+
+Get Exchange Announcements
+Endpoint for getting all exchange-wide announcements.
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_exchange_announcements_with_http_info`
+
+**Signature:**
+```python
+def get_exchange_announcements_with_http_info(_request_timeout: typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]] = None, _request_auth: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _content_type: typing.Optional[typing.Annotated[str, Strict(strict=True)]] = None, _headers: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _host_index: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])] = 0):
+```
+
+**Parameters:**
+
+- `_request_timeout` (Optional)
+  - Type: `typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]]`
+  - Default: `None`
+- `_request_auth` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_content_type` (Optional)
+  - Type: `typing.Optional[typing.Annotated[str, Strict(strict=True)]]`
+  - Default: `None`
+- `_headers` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_host_index` (Optional)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])]`
+  - Default: `0`
+
+**Description:**
+
+Get Exchange Announcements
+Endpoint for getting all exchange-wide announcements.
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_exchange_announcements_with_http_info`
+
+**Signature:**
+```python
+def get_exchange_announcements_with_http_info(_request_timeout: typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]] = None, _request_auth: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _content_type: typing.Optional[typing.Annotated[str, Strict(strict=True)]] = None, _headers: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _host_index: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])] = 0):
+```
+
+**Parameters:**
+
+- `_request_timeout` (Optional)
+  - Type: `typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]]`
+  - Default: `None`
+- `_request_auth` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_content_type` (Optional)
+  - Type: `typing.Optional[typing.Annotated[str, Strict(strict=True)]]`
+  - Default: `None`
+- `_headers` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_host_index` (Optional)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])]`
+  - Default: `0`
+
+**Description:**
+
+Get Exchange Announcements
+Endpoint for getting all exchange-wide announcements.
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_exchange_announcements_without_preload_content`
+
+**Signature:**
+```python
+def get_exchange_announcements_without_preload_content(_request_timeout: typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]] = None, _request_auth: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _content_type: typing.Optional[typing.Annotated[str, Strict(strict=True)]] = None, _headers: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _host_index: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])] = 0):
+```
+
+**Parameters:**
+
+- `_request_timeout` (Optional)
+  - Type: `typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]]`
+  - Default: `None`
+- `_request_auth` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_content_type` (Optional)
+  - Type: `typing.Optional[typing.Annotated[str, Strict(strict=True)]]`
+  - Default: `None`
+- `_headers` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_host_index` (Optional)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])]`
+  - Default: `0`
+
+**Description:**
+
+Get Exchange Announcements
+Endpoint for getting all exchange-wide announcements.
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_exchange_announcements_without_preload_content`
+
+**Signature:**
+```python
+def get_exchange_announcements_without_preload_content(_request_timeout: typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]] = None, _request_auth: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _content_type: typing.Optional[typing.Annotated[str, Strict(strict=True)]] = None, _headers: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _host_index: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])] = 0):
+```
+
+**Parameters:**
+
+- `_request_timeout` (Optional)
+  - Type: `typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]]`
+  - Default: `None`
+- `_request_auth` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_content_type` (Optional)
+  - Type: `typing.Optional[typing.Annotated[str, Strict(strict=True)]]`
+  - Default: `None`
+- `_headers` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_host_index` (Optional)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])]`
+  - Default: `0`
+
+**Description:**
+
+Get Exchange Announcements
+Endpoint for getting all exchange-wide announcements.
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_exchange_schedule`
+
+**Signature:**
+```python
+def get_exchange_schedule():
+```
+
+**Description:**
+
+Get Exchange Schedule
+Endpoint for getting the exchange schedule.
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_exchange_schedule`
+
+**Signature:**
+```python
+def get_exchange_schedule():
+```
+
+**Description:**
+
+Get Exchange Schedule
+Endpoint for getting the exchange schedule.
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_exchange_schedule_with_http_info`
+
+**Signature:**
+```python
+def get_exchange_schedule_with_http_info(_request_timeout: typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]] = None, _request_auth: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _content_type: typing.Optional[typing.Annotated[str, Strict(strict=True)]] = None, _headers: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _host_index: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])] = 0):
+```
+
+**Parameters:**
+
+- `_request_timeout` (Optional)
+  - Type: `typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]]`
+  - Default: `None`
+- `_request_auth` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_content_type` (Optional)
+  - Type: `typing.Optional[typing.Annotated[str, Strict(strict=True)]]`
+  - Default: `None`
+- `_headers` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_host_index` (Optional)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])]`
+  - Default: `0`
+
+**Description:**
+
+Get Exchange Schedule
+Endpoint for getting the exchange schedule.
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_exchange_schedule_with_http_info`
+
+**Signature:**
+```python
+def get_exchange_schedule_with_http_info(_request_timeout: typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]] = None, _request_auth: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _content_type: typing.Optional[typing.Annotated[str, Strict(strict=True)]] = None, _headers: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _host_index: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])] = 0):
+```
+
+**Parameters:**
+
+- `_request_timeout` (Optional)
+  - Type: `typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]]`
+  - Default: `None`
+- `_request_auth` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_content_type` (Optional)
+  - Type: `typing.Optional[typing.Annotated[str, Strict(strict=True)]]`
+  - Default: `None`
+- `_headers` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_host_index` (Optional)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])]`
+  - Default: `0`
+
+**Description:**
+
+Get Exchange Schedule
+Endpoint for getting the exchange schedule.
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_exchange_schedule_without_preload_content`
+
+**Signature:**
+```python
+def get_exchange_schedule_without_preload_content(_request_timeout: typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]] = None, _request_auth: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _content_type: typing.Optional[typing.Annotated[str, Strict(strict=True)]] = None, _headers: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _host_index: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])] = 0):
+```
+
+**Parameters:**
+
+- `_request_timeout` (Optional)
+  - Type: `typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]]`
+  - Default: `None`
+- `_request_auth` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_content_type` (Optional)
+  - Type: `typing.Optional[typing.Annotated[str, Strict(strict=True)]]`
+  - Default: `None`
+- `_headers` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_host_index` (Optional)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])]`
+  - Default: `0`
+
+**Description:**
+
+Get Exchange Schedule
+Endpoint for getting the exchange schedule.
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_exchange_schedule_without_preload_content`
+
+**Signature:**
+```python
+def get_exchange_schedule_without_preload_content(_request_timeout: typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]] = None, _request_auth: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _content_type: typing.Optional[typing.Annotated[str, Strict(strict=True)]] = None, _headers: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _host_index: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])] = 0):
+```
+
+**Parameters:**
+
+- `_request_timeout` (Optional)
+  - Type: `typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]]`
+  - Default: `None`
+- `_request_auth` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_content_type` (Optional)
+  - Type: `typing.Optional[typing.Annotated[str, Strict(strict=True)]]`
+  - Default: `None`
+- `_headers` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_host_index` (Optional)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])]`
+  - Default: `0`
+
+**Description:**
+
+Get Exchange Schedule
+Endpoint for getting the exchange schedule.
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_exchange_status`
+
+**Signature:**
+```python
+def get_exchange_status():
+```
+
+**Description:**
+
+Get Exchange Status
+Endpoint for getting the exchange status.
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_exchange_status`
+
+**Signature:**
+```python
+def get_exchange_status():
+```
+
+**Description:**
+
+Get Exchange Status
+Endpoint for getting the exchange status.
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_exchange_status_with_http_info`
+
+**Signature:**
+```python
+def get_exchange_status_with_http_info(_request_timeout: typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]] = None, _request_auth: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _content_type: typing.Optional[typing.Annotated[str, Strict(strict=True)]] = None, _headers: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _host_index: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])] = 0):
+```
+
+**Parameters:**
+
+- `_request_timeout` (Optional)
+  - Type: `typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]]`
+  - Default: `None`
+- `_request_auth` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_content_type` (Optional)
+  - Type: `typing.Optional[typing.Annotated[str, Strict(strict=True)]]`
+  - Default: `None`
+- `_headers` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_host_index` (Optional)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])]`
+  - Default: `0`
+
+**Description:**
+
+Get Exchange Status
+Endpoint for getting the exchange status.
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_exchange_status_with_http_info`
+
+**Signature:**
+```python
+def get_exchange_status_with_http_info(_request_timeout: typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]] = None, _request_auth: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _content_type: typing.Optional[typing.Annotated[str, Strict(strict=True)]] = None, _headers: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _host_index: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])] = 0):
+```
+
+**Parameters:**
+
+- `_request_timeout` (Optional)
+  - Type: `typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]]`
+  - Default: `None`
+- `_request_auth` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_content_type` (Optional)
+  - Type: `typing.Optional[typing.Annotated[str, Strict(strict=True)]]`
+  - Default: `None`
+- `_headers` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_host_index` (Optional)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])]`
+  - Default: `0`
+
+**Description:**
+
+Get Exchange Status
+Endpoint for getting the exchange status.
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_exchange_status_without_preload_content`
+
+**Signature:**
+```python
+def get_exchange_status_without_preload_content(_request_timeout: typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]] = None, _request_auth: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _content_type: typing.Optional[typing.Annotated[str, Strict(strict=True)]] = None, _headers: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _host_index: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])] = 0):
+```
+
+**Parameters:**
+
+- `_request_timeout` (Optional)
+  - Type: `typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]]`
+  - Default: `None`
+- `_request_auth` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_content_type` (Optional)
+  - Type: `typing.Optional[typing.Annotated[str, Strict(strict=True)]]`
+  - Default: `None`
+- `_headers` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_host_index` (Optional)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])]`
+  - Default: `0`
+
+**Description:**
+
+Get Exchange Status
+Endpoint for getting the exchange status.
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_exchange_status_without_preload_content`
+
+**Signature:**
+```python
+def get_exchange_status_without_preload_content(_request_timeout: typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]] = None, _request_auth: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _content_type: typing.Optional[typing.Annotated[str, Strict(strict=True)]] = None, _headers: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _host_index: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])] = 0):
+```
+
+**Parameters:**
+
+- `_request_timeout` (Optional)
+  - Type: `typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]]`
+  - Default: `None`
+- `_request_auth` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_content_type` (Optional)
+  - Type: `typing.Optional[typing.Annotated[str, Strict(strict=True)]]`
+  - Default: `None`
+- `_headers` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_host_index` (Optional)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])]`
+  - Default: `0`
+
+**Description:**
+
+Get Exchange Status
+Endpoint for getting the exchange status.
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+### Series
+
+#### `get_series_fee_changes`
+
+**Signature:**
+```python
+def get_series_fee_changes(series_ticker: typing.Any = None, show_historical: typing.Any = None):
+```
+
+**Parameters:**
+
+- `series_ticker` (Optional)
+  - Type: `typing.Any`
+  - Default: `None`
+- `show_historical` (Optional)
+  - Type: `typing.Any`
+  - Default: `None`
+
+**Description:**
+
+Get Series Fee Changes
+:param series_ticker:
+:type series_ticker: str
+:param show_historical:
+:type show_historical: bool
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_series_fee_changes`
+
+**Signature:**
+```python
+def get_series_fee_changes(series_ticker: typing.Any = None, show_historical: typing.Any = None):
+```
+
+**Parameters:**
+
+- `series_ticker` (Optional)
+  - Type: `typing.Any`
+  - Default: `None`
+- `show_historical` (Optional)
+  - Type: `typing.Any`
+  - Default: `None`
+
+**Description:**
+
+Get Series Fee Changes
+:param series_ticker:
+:type series_ticker: str
+:param show_historical:
+:type show_historical: bool
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_series_fee_changes_with_http_info`
+
+**Signature:**
+```python
+def get_series_fee_changes_with_http_info(series_ticker: typing.Optional[typing.Annotated[str, Strict(strict=True)]] = None, show_historical: typing.Optional[typing.Annotated[bool, Strict(strict=True)]] = None, _request_timeout: typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]] = None, _request_auth: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _content_type: typing.Optional[typing.Annotated[str, Strict(strict=True)]] = None, _headers: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _host_index: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])] = 0):
+```
+
+**Parameters:**
+
+- `series_ticker` (Optional)
+  - Type: `typing.Optional[typing.Annotated[str, Strict(strict=True)]]`
+  - Default: `None`
+- `show_historical` (Optional)
+  - Type: `typing.Optional[typing.Annotated[bool, Strict(strict=True)]]`
+  - Default: `None`
+- `_request_timeout` (Optional)
+  - Type: `typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]]`
+  - Default: `None`
+- `_request_auth` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_content_type` (Optional)
+  - Type: `typing.Optional[typing.Annotated[str, Strict(strict=True)]]`
+  - Default: `None`
+- `_headers` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_host_index` (Optional)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])]`
+  - Default: `0`
+
+**Description:**
+
+Get Series Fee Changes
+:param series_ticker:
+:type series_ticker: str
+:param show_historical:
+:type show_historical: bool
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_series_fee_changes_with_http_info`
+
+**Signature:**
+```python
+def get_series_fee_changes_with_http_info(series_ticker: typing.Optional[typing.Annotated[str, Strict(strict=True)]] = None, show_historical: typing.Optional[typing.Annotated[bool, Strict(strict=True)]] = None, _request_timeout: typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]] = None, _request_auth: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _content_type: typing.Optional[typing.Annotated[str, Strict(strict=True)]] = None, _headers: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _host_index: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])] = 0):
+```
+
+**Parameters:**
+
+- `series_ticker` (Optional)
+  - Type: `typing.Optional[typing.Annotated[str, Strict(strict=True)]]`
+  - Default: `None`
+- `show_historical` (Optional)
+  - Type: `typing.Optional[typing.Annotated[bool, Strict(strict=True)]]`
+  - Default: `None`
+- `_request_timeout` (Optional)
+  - Type: `typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]]`
+  - Default: `None`
+- `_request_auth` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_content_type` (Optional)
+  - Type: `typing.Optional[typing.Annotated[str, Strict(strict=True)]]`
+  - Default: `None`
+- `_headers` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_host_index` (Optional)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])]`
+  - Default: `0`
+
+**Description:**
+
+Get Series Fee Changes
+:param series_ticker:
+:type series_ticker: str
+:param show_historical:
+:type show_historical: bool
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_series_fee_changes_without_preload_content`
+
+**Signature:**
+```python
+def get_series_fee_changes_without_preload_content(series_ticker: typing.Optional[typing.Annotated[str, Strict(strict=True)]] = None, show_historical: typing.Optional[typing.Annotated[bool, Strict(strict=True)]] = None, _request_timeout: typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]] = None, _request_auth: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _content_type: typing.Optional[typing.Annotated[str, Strict(strict=True)]] = None, _headers: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _host_index: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])] = 0):
+```
+
+**Parameters:**
+
+- `series_ticker` (Optional)
+  - Type: `typing.Optional[typing.Annotated[str, Strict(strict=True)]]`
+  - Default: `None`
+- `show_historical` (Optional)
+  - Type: `typing.Optional[typing.Annotated[bool, Strict(strict=True)]]`
+  - Default: `None`
+- `_request_timeout` (Optional)
+  - Type: `typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]]`
+  - Default: `None`
+- `_request_auth` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_content_type` (Optional)
+  - Type: `typing.Optional[typing.Annotated[str, Strict(strict=True)]]`
+  - Default: `None`
+- `_headers` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_host_index` (Optional)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])]`
+  - Default: `0`
+
+**Description:**
+
+Get Series Fee Changes
+:param series_ticker:
+:type series_ticker: str
+:param show_historical:
+:type show_historical: bool
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_series_fee_changes_without_preload_content`
+
+**Signature:**
+```python
+def get_series_fee_changes_without_preload_content(series_ticker: typing.Optional[typing.Annotated[str, Strict(strict=True)]] = None, show_historical: typing.Optional[typing.Annotated[bool, Strict(strict=True)]] = None, _request_timeout: typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]] = None, _request_auth: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _content_type: typing.Optional[typing.Annotated[str, Strict(strict=True)]] = None, _headers: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _host_index: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])] = 0):
+```
+
+**Parameters:**
+
+- `series_ticker` (Optional)
+  - Type: `typing.Optional[typing.Annotated[str, Strict(strict=True)]]`
+  - Default: `None`
+- `show_historical` (Optional)
+  - Type: `typing.Optional[typing.Annotated[bool, Strict(strict=True)]]`
+  - Default: `None`
+- `_request_timeout` (Optional)
+  - Type: `typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]]`
+  - Default: `None`
+- `_request_auth` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_content_type` (Optional)
+  - Type: `typing.Optional[typing.Annotated[str, Strict(strict=True)]]`
+  - Default: `None`
+- `_headers` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_host_index` (Optional)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])]`
+  - Default: `0`
+
+**Description:**
+
+Get Series Fee Changes
+:param series_ticker:
+:type series_ticker: str
+:param show_historical:
+:type show_historical: bool
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+
+================================================================================
+## MarketApi
+================================================================================
+
+NOTE: This class is auto generated by OpenAPI Generator
+    Ref: https://openapi-generator.tech
+
+    Do not edit the class manually.
+
+### Initialization Parameters
+
+```python
+MarketApi(
+    api_client = None,
+)
+```
+
+### Market Data
+
+#### `batch_get_market_candlesticks`
+
+**Signature:**
+```python
+def batch_get_market_candlesticks(market_tickers: typing.Any, start_ts: typing.Any, end_ts: typing.Any, period_interval: typing.Any, include_latest_before_start: typing.Any = None):
+```
+
+**Parameters:**
+
+- `market_tickers` (Required)
+  - Type: `typing.Any`
+- `start_ts` (Required)
+  - Type: `typing.Any`
+- `end_ts` (Required)
+  - Type: `typing.Any`
+- `period_interval` (Required)
+  - Type: `typing.Any`
+- `include_latest_before_start` (Optional)
+  - Type: `typing.Any`
+  - Default: `None`
+
+**Description:**
+
+Batch Get Market Candlesticks
+Endpoint for retrieving candlestick data for multiple markets.  - Accepts up to 100 market tickers per request - Returns up to 10,000 candlesticks total across all markets - Returns candlesticks grouped by market_id - Optionally includes a synthetic initial candlestick for price continuity (see `include_latest_before_start` parameter)
+:param market_tickers: Comma-separated list of market tickers (maximum 100) (required)
+:type market_tickers: str
+:param start_ts: Start timestamp in Unix seconds (required)
+:type start_ts: int
+:param end_ts: End timestamp in Unix seconds (required)
+:type end_ts: int
+:param period_interval: Candlestick period interval in minutes (required)
+:type period_interval: int
+:param include_latest_before_start: If true, prepends the latest candlestick available before the start_ts. This synthetic candlestick is created by: 1. Finding the most recent real candlestick before start_ts 2. Projecting it forward to the first period boundary (calculated as the next period interval after start_ts) 3. Setting all OHLC prices to null, and `previous_price` to the close price from the real candlestick
+:type include_latest_before_start: bool
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `batch_get_market_candlesticks`
+
+**Signature:**
+```python
+def batch_get_market_candlesticks(market_tickers: typing.Any, start_ts: typing.Any, end_ts: typing.Any, period_interval: typing.Any, include_latest_before_start: typing.Any = None):
+```
+
+**Parameters:**
+
+- `market_tickers` (Required)
+  - Type: `typing.Any`
+- `start_ts` (Required)
+  - Type: `typing.Any`
+- `end_ts` (Required)
+  - Type: `typing.Any`
+- `period_interval` (Required)
+  - Type: `typing.Any`
+- `include_latest_before_start` (Optional)
+  - Type: `typing.Any`
+  - Default: `None`
+
+**Description:**
+
+Batch Get Market Candlesticks
+Endpoint for retrieving candlestick data for multiple markets.  - Accepts up to 100 market tickers per request - Returns up to 10,000 candlesticks total across all markets - Returns candlesticks grouped by market_id - Optionally includes a synthetic initial candlestick for price continuity (see `include_latest_before_start` parameter)
+:param market_tickers: Comma-separated list of market tickers (maximum 100) (required)
+:type market_tickers: str
+:param start_ts: Start timestamp in Unix seconds (required)
+:type start_ts: int
+:param end_ts: End timestamp in Unix seconds (required)
+:type end_ts: int
+:param period_interval: Candlestick period interval in minutes (required)
+:type period_interval: int
+:param include_latest_before_start: If true, prepends the latest candlestick available before the start_ts. This synthetic candlestick is created by: 1. Finding the most recent real candlestick before start_ts 2. Projecting it forward to the first period boundary (calculated as the next period interval after start_ts) 3. Setting all OHLC prices to null, and `previous_price` to the close price from the real candlestick
+:type include_latest_before_start: bool
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `batch_get_market_candlesticks_with_http_info`
+
+**Signature:**
+```python
+def batch_get_market_candlesticks_with_http_info(market_tickers: typing.Annotated[str, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, description='Comma-separated list of market tickers (maximum 100)')], start_ts: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, description='Start timestamp in Unix seconds')], end_ts: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, description='End timestamp in Unix seconds')], period_interval: typing.Annotated[int, FieldInfo(annotation=NoneType, required=True, description='Candlestick period interval in minutes', metadata=[Strict(strict=True), Ge(ge=1)])], include_latest_before_start: typing.Annotated[typing.Optional[typing.Annotated[bool, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='If true, prepends the latest candlestick available before the start_ts. This synthetic candlestick is created by: 1. Finding the most recent real candlestick before start_ts 2. Projecting it forward to the first period boundary (calculated as the next period interval after start_ts) 3. Setting all OHLC prices to null, and `previous_price` to the close price from the real candlestick ')] = None, _request_timeout: typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]] = None, _request_auth: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _content_type: typing.Optional[typing.Annotated[str, Strict(strict=True)]] = None, _headers: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _host_index: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])] = 0):
+```
+
+**Parameters:**
+
+- `market_tickers` (Required)
+  - Type: `typing.Annotated[str, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, description='Comma-separated list of market tickers (maximum 100)')]`
+- `start_ts` (Required)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, description='Start timestamp in Unix seconds')]`
+- `end_ts` (Required)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, description='End timestamp in Unix seconds')]`
+- `period_interval` (Required)
+  - Type: `typing.Annotated[int, FieldInfo(annotation=NoneType, required=True, description='Candlestick period interval in minutes', metadata=[Strict(strict=True), Ge(ge=1)])]`
+- `include_latest_before_start` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[bool, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='If true, prepends the latest candlestick available before the start_ts. This synthetic candlestick is created by: 1. Finding the most recent real candlestick before start_ts 2. Projecting it forward to the first period boundary (calculated as the next period interval after start_ts) 3. Setting all OHLC prices to null, and `previous_price` to the close price from the real candlestick ')]`
+  - Default: `None`
+- `_request_timeout` (Optional)
+  - Type: `typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]]`
+  - Default: `None`
+- `_request_auth` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_content_type` (Optional)
+  - Type: `typing.Optional[typing.Annotated[str, Strict(strict=True)]]`
+  - Default: `None`
+- `_headers` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_host_index` (Optional)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])]`
+  - Default: `0`
+
+**Description:**
+
+Batch Get Market Candlesticks
+Endpoint for retrieving candlestick data for multiple markets.  - Accepts up to 100 market tickers per request - Returns up to 10,000 candlesticks total across all markets - Returns candlesticks grouped by market_id - Optionally includes a synthetic initial candlestick for price continuity (see `include_latest_before_start` parameter)
+:param market_tickers: Comma-separated list of market tickers (maximum 100) (required)
+:type market_tickers: str
+:param start_ts: Start timestamp in Unix seconds (required)
+:type start_ts: int
+:param end_ts: End timestamp in Unix seconds (required)
+:type end_ts: int
+:param period_interval: Candlestick period interval in minutes (required)
+:type period_interval: int
+:param include_latest_before_start: If true, prepends the latest candlestick available before the start_ts. This synthetic candlestick is created by: 1. Finding the most recent real candlestick before start_ts 2. Projecting it forward to the first period boundary (calculated as the next period interval after start_ts) 3. Setting all OHLC prices to null, and `previous_price` to the close price from the real candlestick
+:type include_latest_before_start: bool
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `batch_get_market_candlesticks_with_http_info`
+
+**Signature:**
+```python
+def batch_get_market_candlesticks_with_http_info(market_tickers: typing.Annotated[str, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, description='Comma-separated list of market tickers (maximum 100)')], start_ts: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, description='Start timestamp in Unix seconds')], end_ts: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, description='End timestamp in Unix seconds')], period_interval: typing.Annotated[int, FieldInfo(annotation=NoneType, required=True, description='Candlestick period interval in minutes', metadata=[Strict(strict=True), Ge(ge=1)])], include_latest_before_start: typing.Annotated[typing.Optional[typing.Annotated[bool, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='If true, prepends the latest candlestick available before the start_ts. This synthetic candlestick is created by: 1. Finding the most recent real candlestick before start_ts 2. Projecting it forward to the first period boundary (calculated as the next period interval after start_ts) 3. Setting all OHLC prices to null, and `previous_price` to the close price from the real candlestick ')] = None, _request_timeout: typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]] = None, _request_auth: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _content_type: typing.Optional[typing.Annotated[str, Strict(strict=True)]] = None, _headers: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _host_index: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])] = 0):
+```
+
+**Parameters:**
+
+- `market_tickers` (Required)
+  - Type: `typing.Annotated[str, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, description='Comma-separated list of market tickers (maximum 100)')]`
+- `start_ts` (Required)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, description='Start timestamp in Unix seconds')]`
+- `end_ts` (Required)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, description='End timestamp in Unix seconds')]`
+- `period_interval` (Required)
+  - Type: `typing.Annotated[int, FieldInfo(annotation=NoneType, required=True, description='Candlestick period interval in minutes', metadata=[Strict(strict=True), Ge(ge=1)])]`
+- `include_latest_before_start` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[bool, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='If true, prepends the latest candlestick available before the start_ts. This synthetic candlestick is created by: 1. Finding the most recent real candlestick before start_ts 2. Projecting it forward to the first period boundary (calculated as the next period interval after start_ts) 3. Setting all OHLC prices to null, and `previous_price` to the close price from the real candlestick ')]`
+  - Default: `None`
+- `_request_timeout` (Optional)
+  - Type: `typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]]`
+  - Default: `None`
+- `_request_auth` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_content_type` (Optional)
+  - Type: `typing.Optional[typing.Annotated[str, Strict(strict=True)]]`
+  - Default: `None`
+- `_headers` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_host_index` (Optional)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])]`
+  - Default: `0`
+
+**Description:**
+
+Batch Get Market Candlesticks
+Endpoint for retrieving candlestick data for multiple markets.  - Accepts up to 100 market tickers per request - Returns up to 10,000 candlesticks total across all markets - Returns candlesticks grouped by market_id - Optionally includes a synthetic initial candlestick for price continuity (see `include_latest_before_start` parameter)
+:param market_tickers: Comma-separated list of market tickers (maximum 100) (required)
+:type market_tickers: str
+:param start_ts: Start timestamp in Unix seconds (required)
+:type start_ts: int
+:param end_ts: End timestamp in Unix seconds (required)
+:type end_ts: int
+:param period_interval: Candlestick period interval in minutes (required)
+:type period_interval: int
+:param include_latest_before_start: If true, prepends the latest candlestick available before the start_ts. This synthetic candlestick is created by: 1. Finding the most recent real candlestick before start_ts 2. Projecting it forward to the first period boundary (calculated as the next period interval after start_ts) 3. Setting all OHLC prices to null, and `previous_price` to the close price from the real candlestick
+:type include_latest_before_start: bool
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `batch_get_market_candlesticks_without_preload_content`
+
+**Signature:**
+```python
+def batch_get_market_candlesticks_without_preload_content(market_tickers: typing.Annotated[str, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, description='Comma-separated list of market tickers (maximum 100)')], start_ts: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, description='Start timestamp in Unix seconds')], end_ts: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, description='End timestamp in Unix seconds')], period_interval: typing.Annotated[int, FieldInfo(annotation=NoneType, required=True, description='Candlestick period interval in minutes', metadata=[Strict(strict=True), Ge(ge=1)])], include_latest_before_start: typing.Annotated[typing.Optional[typing.Annotated[bool, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='If true, prepends the latest candlestick available before the start_ts. This synthetic candlestick is created by: 1. Finding the most recent real candlestick before start_ts 2. Projecting it forward to the first period boundary (calculated as the next period interval after start_ts) 3. Setting all OHLC prices to null, and `previous_price` to the close price from the real candlestick ')] = None, _request_timeout: typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]] = None, _request_auth: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _content_type: typing.Optional[typing.Annotated[str, Strict(strict=True)]] = None, _headers: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _host_index: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])] = 0):
+```
+
+**Parameters:**
+
+- `market_tickers` (Required)
+  - Type: `typing.Annotated[str, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, description='Comma-separated list of market tickers (maximum 100)')]`
+- `start_ts` (Required)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, description='Start timestamp in Unix seconds')]`
+- `end_ts` (Required)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, description='End timestamp in Unix seconds')]`
+- `period_interval` (Required)
+  - Type: `typing.Annotated[int, FieldInfo(annotation=NoneType, required=True, description='Candlestick period interval in minutes', metadata=[Strict(strict=True), Ge(ge=1)])]`
+- `include_latest_before_start` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[bool, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='If true, prepends the latest candlestick available before the start_ts. This synthetic candlestick is created by: 1. Finding the most recent real candlestick before start_ts 2. Projecting it forward to the first period boundary (calculated as the next period interval after start_ts) 3. Setting all OHLC prices to null, and `previous_price` to the close price from the real candlestick ')]`
+  - Default: `None`
+- `_request_timeout` (Optional)
+  - Type: `typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]]`
+  - Default: `None`
+- `_request_auth` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_content_type` (Optional)
+  - Type: `typing.Optional[typing.Annotated[str, Strict(strict=True)]]`
+  - Default: `None`
+- `_headers` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_host_index` (Optional)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])]`
+  - Default: `0`
+
+**Description:**
+
+Batch Get Market Candlesticks
+Endpoint for retrieving candlestick data for multiple markets.  - Accepts up to 100 market tickers per request - Returns up to 10,000 candlesticks total across all markets - Returns candlesticks grouped by market_id - Optionally includes a synthetic initial candlestick for price continuity (see `include_latest_before_start` parameter)
+:param market_tickers: Comma-separated list of market tickers (maximum 100) (required)
+:type market_tickers: str
+:param start_ts: Start timestamp in Unix seconds (required)
+:type start_ts: int
+:param end_ts: End timestamp in Unix seconds (required)
+:type end_ts: int
+:param period_interval: Candlestick period interval in minutes (required)
+:type period_interval: int
+:param include_latest_before_start: If true, prepends the latest candlestick available before the start_ts. This synthetic candlestick is created by: 1. Finding the most recent real candlestick before start_ts 2. Projecting it forward to the first period boundary (calculated as the next period interval after start_ts) 3. Setting all OHLC prices to null, and `previous_price` to the close price from the real candlestick
+:type include_latest_before_start: bool
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `batch_get_market_candlesticks_without_preload_content`
+
+**Signature:**
+```python
+def batch_get_market_candlesticks_without_preload_content(market_tickers: typing.Annotated[str, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, description='Comma-separated list of market tickers (maximum 100)')], start_ts: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, description='Start timestamp in Unix seconds')], end_ts: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, description='End timestamp in Unix seconds')], period_interval: typing.Annotated[int, FieldInfo(annotation=NoneType, required=True, description='Candlestick period interval in minutes', metadata=[Strict(strict=True), Ge(ge=1)])], include_latest_before_start: typing.Annotated[typing.Optional[typing.Annotated[bool, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='If true, prepends the latest candlestick available before the start_ts. This synthetic candlestick is created by: 1. Finding the most recent real candlestick before start_ts 2. Projecting it forward to the first period boundary (calculated as the next period interval after start_ts) 3. Setting all OHLC prices to null, and `previous_price` to the close price from the real candlestick ')] = None, _request_timeout: typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]] = None, _request_auth: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _content_type: typing.Optional[typing.Annotated[str, Strict(strict=True)]] = None, _headers: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _host_index: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])] = 0):
+```
+
+**Parameters:**
+
+- `market_tickers` (Required)
+  - Type: `typing.Annotated[str, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, description='Comma-separated list of market tickers (maximum 100)')]`
+- `start_ts` (Required)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, description='Start timestamp in Unix seconds')]`
+- `end_ts` (Required)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, description='End timestamp in Unix seconds')]`
+- `period_interval` (Required)
+  - Type: `typing.Annotated[int, FieldInfo(annotation=NoneType, required=True, description='Candlestick period interval in minutes', metadata=[Strict(strict=True), Ge(ge=1)])]`
+- `include_latest_before_start` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[bool, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='If true, prepends the latest candlestick available before the start_ts. This synthetic candlestick is created by: 1. Finding the most recent real candlestick before start_ts 2. Projecting it forward to the first period boundary (calculated as the next period interval after start_ts) 3. Setting all OHLC prices to null, and `previous_price` to the close price from the real candlestick ')]`
+  - Default: `None`
+- `_request_timeout` (Optional)
+  - Type: `typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]]`
+  - Default: `None`
+- `_request_auth` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_content_type` (Optional)
+  - Type: `typing.Optional[typing.Annotated[str, Strict(strict=True)]]`
+  - Default: `None`
+- `_headers` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_host_index` (Optional)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])]`
+  - Default: `0`
+
+**Description:**
+
+Batch Get Market Candlesticks
+Endpoint for retrieving candlestick data for multiple markets.  - Accepts up to 100 market tickers per request - Returns up to 10,000 candlesticks total across all markets - Returns candlesticks grouped by market_id - Optionally includes a synthetic initial candlestick for price continuity (see `include_latest_before_start` parameter)
+:param market_tickers: Comma-separated list of market tickers (maximum 100) (required)
+:type market_tickers: str
+:param start_ts: Start timestamp in Unix seconds (required)
+:type start_ts: int
+:param end_ts: End timestamp in Unix seconds (required)
+:type end_ts: int
+:param period_interval: Candlestick period interval in minutes (required)
+:type period_interval: int
+:param include_latest_before_start: If true, prepends the latest candlestick available before the start_ts. This synthetic candlestick is created by: 1. Finding the most recent real candlestick before start_ts 2. Projecting it forward to the first period boundary (calculated as the next period interval after start_ts) 3. Setting all OHLC prices to null, and `previous_price` to the close price from the real candlestick
+:type include_latest_before_start: bool
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_market`
+
+**Signature:**
+```python
+def get_market(ticker: typing.Annotated[str, Strict(strict=True)]):
+```
+
+**Parameters:**
+
+- `ticker` (Required)
+  - Type: `typing.Annotated[str, Strict(strict=True)]`
+
+**Description:**
+
+Get Market
+Endpoint for getting data about a specific market by its ticker. A market represents a specific binary outcome within an event that users can trade on (e.g., "Will candidate X win?"). Markets have yes/no positions, current prices, volume, and settlement rules.
+:param ticker: Market ticker (required)
+:type ticker: str
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_market`
+
+**Signature:**
+```python
+def get_market(ticker: typing.Annotated[str, Strict(strict=True)]):
+```
+
+**Parameters:**
+
+- `ticker` (Required)
+  - Type: `typing.Annotated[str, Strict(strict=True)]`
+
+**Description:**
+
+Get Market
+Endpoint for getting data about a specific market by its ticker. A market represents a specific binary outcome within an event that users can trade on (e.g., "Will candidate X win?"). Markets have yes/no positions, current prices, volume, and settlement rules.
+:param ticker: Market ticker (required)
+:type ticker: str
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_market_candlesticks`
+
+**Signature:**
+```python
+def get_market_candlesticks(series_ticker: typing.Annotated[str, Strict(strict=True)], ticker: typing.Annotated[str, Strict(strict=True)], start_ts: typing.Any, end_ts: typing.Any, period_interval: typing.Any):
+```
+
+**Parameters:**
+
+- `series_ticker` (Required)
+  - Type: `typing.Annotated[str, Strict(strict=True)]`
+- `ticker` (Required)
+  - Type: `typing.Annotated[str, Strict(strict=True)]`
+- `start_ts` (Required)
+  - Type: `typing.Any`
+- `end_ts` (Required)
+  - Type: `typing.Any`
+- `period_interval` (Required)
+  - Type: `typing.Any`
+
+**Description:**
+
+Get Market Candlesticks
+Time period length of each candlestick in minutes. Valid values: 1 (1 minute), 60 (1 hour), 1440 (1 day).
+:param series_ticker: Series ticker - the series that contains the target market (required)
+:type series_ticker: str
+:param ticker: Market ticker - unique identifier for the specific market (required)
+:type ticker: str
+:param start_ts: Start timestamp (Unix timestamp). Candlesticks will include those ending on or after this time. (required)
+:type start_ts: int
+:param end_ts: End timestamp (Unix timestamp). Candlesticks will include those ending on or before this time. (required)
+:type end_ts: int
+:param period_interval: Time period length of each candlestick in minutes. Valid values are 1 (1 minute), 60 (1 hour), or 1440 (1 day). (required)
+:type period_interval: int
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_market_candlesticks`
+
+**Signature:**
+```python
+def get_market_candlesticks(series_ticker: typing.Annotated[str, Strict(strict=True)], ticker: typing.Annotated[str, Strict(strict=True)], start_ts: typing.Any, end_ts: typing.Any, period_interval: typing.Any):
+```
+
+**Parameters:**
+
+- `series_ticker` (Required)
+  - Type: `typing.Annotated[str, Strict(strict=True)]`
+- `ticker` (Required)
+  - Type: `typing.Annotated[str, Strict(strict=True)]`
+- `start_ts` (Required)
+  - Type: `typing.Any`
+- `end_ts` (Required)
+  - Type: `typing.Any`
+- `period_interval` (Required)
+  - Type: `typing.Any`
+
+**Description:**
+
+Get Market Candlesticks
+Time period length of each candlestick in minutes. Valid values: 1 (1 minute), 60 (1 hour), 1440 (1 day).
+:param series_ticker: Series ticker - the series that contains the target market (required)
+:type series_ticker: str
+:param ticker: Market ticker - unique identifier for the specific market (required)
+:type ticker: str
+:param start_ts: Start timestamp (Unix timestamp). Candlesticks will include those ending on or after this time. (required)
+:type start_ts: int
+:param end_ts: End timestamp (Unix timestamp). Candlesticks will include those ending on or before this time. (required)
+:type end_ts: int
+:param period_interval: Time period length of each candlestick in minutes. Valid values are 1 (1 minute), 60 (1 hour), or 1440 (1 day). (required)
+:type period_interval: int
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_market_candlesticks_with_http_info`
+
+**Signature:**
+```python
+def get_market_candlesticks_with_http_info(series_ticker: typing.Annotated[str, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, description='Series ticker - the series that contains the target market')], ticker: typing.Annotated[str, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, description='Market ticker - unique identifier for the specific market')], start_ts: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, description='Start timestamp (Unix timestamp). Candlesticks will include those ending on or after this time.')], end_ts: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, description='End timestamp (Unix timestamp). Candlesticks will include those ending on or before this time.')], period_interval: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, description='Time period length of each candlestick in minutes. Valid values are 1 (1 minute), 60 (1 hour), or 1440 (1 day).')], _request_timeout: typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]] = None, _request_auth: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _content_type: typing.Optional[typing.Annotated[str, Strict(strict=True)]] = None, _headers: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _host_index: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])] = 0):
+```
+
+**Parameters:**
+
+- `series_ticker` (Required)
+  - Type: `typing.Annotated[str, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, description='Series ticker - the series that contains the target market')]`
+- `ticker` (Required)
+  - Type: `typing.Annotated[str, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, description='Market ticker - unique identifier for the specific market')]`
+- `start_ts` (Required)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, description='Start timestamp (Unix timestamp). Candlesticks will include those ending on or after this time.')]`
+- `end_ts` (Required)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, description='End timestamp (Unix timestamp). Candlesticks will include those ending on or before this time.')]`
+- `period_interval` (Required)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, description='Time period length of each candlestick in minutes. Valid values are 1 (1 minute), 60 (1 hour), or 1440 (1 day).')]`
+- `_request_timeout` (Optional)
+  - Type: `typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]]`
+  - Default: `None`
+- `_request_auth` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_content_type` (Optional)
+  - Type: `typing.Optional[typing.Annotated[str, Strict(strict=True)]]`
+  - Default: `None`
+- `_headers` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_host_index` (Optional)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])]`
+  - Default: `0`
+
+**Description:**
+
+Get Market Candlesticks
+Time period length of each candlestick in minutes. Valid values: 1 (1 minute), 60 (1 hour), 1440 (1 day).
+:param series_ticker: Series ticker - the series that contains the target market (required)
+:type series_ticker: str
+:param ticker: Market ticker - unique identifier for the specific market (required)
+:type ticker: str
+:param start_ts: Start timestamp (Unix timestamp). Candlesticks will include those ending on or after this time. (required)
+:type start_ts: int
+:param end_ts: End timestamp (Unix timestamp). Candlesticks will include those ending on or before this time. (required)
+:type end_ts: int
+:param period_interval: Time period length of each candlestick in minutes. Valid values are 1 (1 minute), 60 (1 hour), or 1440 (1 day). (required)
+:type period_interval: int
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_market_candlesticks_with_http_info`
+
+**Signature:**
+```python
+def get_market_candlesticks_with_http_info(series_ticker: typing.Annotated[str, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, description='Series ticker - the series that contains the target market')], ticker: typing.Annotated[str, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, description='Market ticker - unique identifier for the specific market')], start_ts: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, description='Start timestamp (Unix timestamp). Candlesticks will include those ending on or after this time.')], end_ts: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, description='End timestamp (Unix timestamp). Candlesticks will include those ending on or before this time.')], period_interval: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, description='Time period length of each candlestick in minutes. Valid values are 1 (1 minute), 60 (1 hour), or 1440 (1 day).')], _request_timeout: typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]] = None, _request_auth: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _content_type: typing.Optional[typing.Annotated[str, Strict(strict=True)]] = None, _headers: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _host_index: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])] = 0):
+```
+
+**Parameters:**
+
+- `series_ticker` (Required)
+  - Type: `typing.Annotated[str, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, description='Series ticker - the series that contains the target market')]`
+- `ticker` (Required)
+  - Type: `typing.Annotated[str, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, description='Market ticker - unique identifier for the specific market')]`
+- `start_ts` (Required)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, description='Start timestamp (Unix timestamp). Candlesticks will include those ending on or after this time.')]`
+- `end_ts` (Required)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, description='End timestamp (Unix timestamp). Candlesticks will include those ending on or before this time.')]`
+- `period_interval` (Required)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, description='Time period length of each candlestick in minutes. Valid values are 1 (1 minute), 60 (1 hour), or 1440 (1 day).')]`
+- `_request_timeout` (Optional)
+  - Type: `typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]]`
+  - Default: `None`
+- `_request_auth` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_content_type` (Optional)
+  - Type: `typing.Optional[typing.Annotated[str, Strict(strict=True)]]`
+  - Default: `None`
+- `_headers` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_host_index` (Optional)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])]`
+  - Default: `0`
+
+**Description:**
+
+Get Market Candlesticks
+Time period length of each candlestick in minutes. Valid values: 1 (1 minute), 60 (1 hour), 1440 (1 day).
+:param series_ticker: Series ticker - the series that contains the target market (required)
+:type series_ticker: str
+:param ticker: Market ticker - unique identifier for the specific market (required)
+:type ticker: str
+:param start_ts: Start timestamp (Unix timestamp). Candlesticks will include those ending on or after this time. (required)
+:type start_ts: int
+:param end_ts: End timestamp (Unix timestamp). Candlesticks will include those ending on or before this time. (required)
+:type end_ts: int
+:param period_interval: Time period length of each candlestick in minutes. Valid values are 1 (1 minute), 60 (1 hour), or 1440 (1 day). (required)
+:type period_interval: int
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_market_candlesticks_without_preload_content`
+
+**Signature:**
+```python
+def get_market_candlesticks_without_preload_content(series_ticker: typing.Annotated[str, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, description='Series ticker - the series that contains the target market')], ticker: typing.Annotated[str, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, description='Market ticker - unique identifier for the specific market')], start_ts: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, description='Start timestamp (Unix timestamp). Candlesticks will include those ending on or after this time.')], end_ts: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, description='End timestamp (Unix timestamp). Candlesticks will include those ending on or before this time.')], period_interval: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, description='Time period length of each candlestick in minutes. Valid values are 1 (1 minute), 60 (1 hour), or 1440 (1 day).')], _request_timeout: typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]] = None, _request_auth: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _content_type: typing.Optional[typing.Annotated[str, Strict(strict=True)]] = None, _headers: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _host_index: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])] = 0):
+```
+
+**Parameters:**
+
+- `series_ticker` (Required)
+  - Type: `typing.Annotated[str, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, description='Series ticker - the series that contains the target market')]`
+- `ticker` (Required)
+  - Type: `typing.Annotated[str, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, description='Market ticker - unique identifier for the specific market')]`
+- `start_ts` (Required)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, description='Start timestamp (Unix timestamp). Candlesticks will include those ending on or after this time.')]`
+- `end_ts` (Required)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, description='End timestamp (Unix timestamp). Candlesticks will include those ending on or before this time.')]`
+- `period_interval` (Required)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, description='Time period length of each candlestick in minutes. Valid values are 1 (1 minute), 60 (1 hour), or 1440 (1 day).')]`
+- `_request_timeout` (Optional)
+  - Type: `typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]]`
+  - Default: `None`
+- `_request_auth` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_content_type` (Optional)
+  - Type: `typing.Optional[typing.Annotated[str, Strict(strict=True)]]`
+  - Default: `None`
+- `_headers` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_host_index` (Optional)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])]`
+  - Default: `0`
+
+**Description:**
+
+Get Market Candlesticks
+Time period length of each candlestick in minutes. Valid values: 1 (1 minute), 60 (1 hour), 1440 (1 day).
+:param series_ticker: Series ticker - the series that contains the target market (required)
+:type series_ticker: str
+:param ticker: Market ticker - unique identifier for the specific market (required)
+:type ticker: str
+:param start_ts: Start timestamp (Unix timestamp). Candlesticks will include those ending on or after this time. (required)
+:type start_ts: int
+:param end_ts: End timestamp (Unix timestamp). Candlesticks will include those ending on or before this time. (required)
+:type end_ts: int
+:param period_interval: Time period length of each candlestick in minutes. Valid values are 1 (1 minute), 60 (1 hour), or 1440 (1 day). (required)
+:type period_interval: int
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_market_candlesticks_without_preload_content`
+
+**Signature:**
+```python
+def get_market_candlesticks_without_preload_content(series_ticker: typing.Annotated[str, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, description='Series ticker - the series that contains the target market')], ticker: typing.Annotated[str, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, description='Market ticker - unique identifier for the specific market')], start_ts: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, description='Start timestamp (Unix timestamp). Candlesticks will include those ending on or after this time.')], end_ts: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, description='End timestamp (Unix timestamp). Candlesticks will include those ending on or before this time.')], period_interval: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, description='Time period length of each candlestick in minutes. Valid values are 1 (1 minute), 60 (1 hour), or 1440 (1 day).')], _request_timeout: typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]] = None, _request_auth: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _content_type: typing.Optional[typing.Annotated[str, Strict(strict=True)]] = None, _headers: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _host_index: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])] = 0):
+```
+
+**Parameters:**
+
+- `series_ticker` (Required)
+  - Type: `typing.Annotated[str, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, description='Series ticker - the series that contains the target market')]`
+- `ticker` (Required)
+  - Type: `typing.Annotated[str, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, description='Market ticker - unique identifier for the specific market')]`
+- `start_ts` (Required)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, description='Start timestamp (Unix timestamp). Candlesticks will include those ending on or after this time.')]`
+- `end_ts` (Required)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, description='End timestamp (Unix timestamp). Candlesticks will include those ending on or before this time.')]`
+- `period_interval` (Required)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, description='Time period length of each candlestick in minutes. Valid values are 1 (1 minute), 60 (1 hour), or 1440 (1 day).')]`
+- `_request_timeout` (Optional)
+  - Type: `typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]]`
+  - Default: `None`
+- `_request_auth` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_content_type` (Optional)
+  - Type: `typing.Optional[typing.Annotated[str, Strict(strict=True)]]`
+  - Default: `None`
+- `_headers` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_host_index` (Optional)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])]`
+  - Default: `0`
+
+**Description:**
+
+Get Market Candlesticks
+Time period length of each candlestick in minutes. Valid values: 1 (1 minute), 60 (1 hour), 1440 (1 day).
+:param series_ticker: Series ticker - the series that contains the target market (required)
+:type series_ticker: str
+:param ticker: Market ticker - unique identifier for the specific market (required)
+:type ticker: str
+:param start_ts: Start timestamp (Unix timestamp). Candlesticks will include those ending on or after this time. (required)
+:type start_ts: int
+:param end_ts: End timestamp (Unix timestamp). Candlesticks will include those ending on or before this time. (required)
+:type end_ts: int
+:param period_interval: Time period length of each candlestick in minutes. Valid values are 1 (1 minute), 60 (1 hour), or 1440 (1 day). (required)
+:type period_interval: int
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_market_with_http_info`
+
+**Signature:**
+```python
+def get_market_with_http_info(ticker: typing.Annotated[str, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, description='Market ticker')], _request_timeout: typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]] = None, _request_auth: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _content_type: typing.Optional[typing.Annotated[str, Strict(strict=True)]] = None, _headers: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _host_index: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])] = 0):
+```
+
+**Parameters:**
+
+- `ticker` (Required)
+  - Type: `typing.Annotated[str, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, description='Market ticker')]`
+- `_request_timeout` (Optional)
+  - Type: `typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]]`
+  - Default: `None`
+- `_request_auth` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_content_type` (Optional)
+  - Type: `typing.Optional[typing.Annotated[str, Strict(strict=True)]]`
+  - Default: `None`
+- `_headers` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_host_index` (Optional)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])]`
+  - Default: `0`
+
+**Description:**
+
+Get Market
+Endpoint for getting data about a specific market by its ticker. A market represents a specific binary outcome within an event that users can trade on (e.g., "Will candidate X win?"). Markets have yes/no positions, current prices, volume, and settlement rules.
+:param ticker: Market ticker (required)
+:type ticker: str
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_market_with_http_info`
+
+**Signature:**
+```python
+def get_market_with_http_info(ticker: typing.Annotated[str, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, description='Market ticker')], _request_timeout: typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]] = None, _request_auth: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _content_type: typing.Optional[typing.Annotated[str, Strict(strict=True)]] = None, _headers: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _host_index: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])] = 0):
+```
+
+**Parameters:**
+
+- `ticker` (Required)
+  - Type: `typing.Annotated[str, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, description='Market ticker')]`
+- `_request_timeout` (Optional)
+  - Type: `typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]]`
+  - Default: `None`
+- `_request_auth` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_content_type` (Optional)
+  - Type: `typing.Optional[typing.Annotated[str, Strict(strict=True)]]`
+  - Default: `None`
+- `_headers` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_host_index` (Optional)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])]`
+  - Default: `0`
+
+**Description:**
+
+Get Market
+Endpoint for getting data about a specific market by its ticker. A market represents a specific binary outcome within an event that users can trade on (e.g., "Will candidate X win?"). Markets have yes/no positions, current prices, volume, and settlement rules.
+:param ticker: Market ticker (required)
+:type ticker: str
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_market_without_preload_content`
+
+**Signature:**
+```python
+def get_market_without_preload_content(ticker: typing.Annotated[str, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, description='Market ticker')], _request_timeout: typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]] = None, _request_auth: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _content_type: typing.Optional[typing.Annotated[str, Strict(strict=True)]] = None, _headers: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _host_index: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])] = 0):
+```
+
+**Parameters:**
+
+- `ticker` (Required)
+  - Type: `typing.Annotated[str, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, description='Market ticker')]`
+- `_request_timeout` (Optional)
+  - Type: `typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]]`
+  - Default: `None`
+- `_request_auth` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_content_type` (Optional)
+  - Type: `typing.Optional[typing.Annotated[str, Strict(strict=True)]]`
+  - Default: `None`
+- `_headers` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_host_index` (Optional)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])]`
+  - Default: `0`
+
+**Description:**
+
+Get Market
+Endpoint for getting data about a specific market by its ticker. A market represents a specific binary outcome within an event that users can trade on (e.g., "Will candidate X win?"). Markets have yes/no positions, current prices, volume, and settlement rules.
+:param ticker: Market ticker (required)
+:type ticker: str
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_market_without_preload_content`
+
+**Signature:**
+```python
+def get_market_without_preload_content(ticker: typing.Annotated[str, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, description='Market ticker')], _request_timeout: typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]] = None, _request_auth: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _content_type: typing.Optional[typing.Annotated[str, Strict(strict=True)]] = None, _headers: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _host_index: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])] = 0):
+```
+
+**Parameters:**
+
+- `ticker` (Required)
+  - Type: `typing.Annotated[str, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, description='Market ticker')]`
+- `_request_timeout` (Optional)
+  - Type: `typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]]`
+  - Default: `None`
+- `_request_auth` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_content_type` (Optional)
+  - Type: `typing.Optional[typing.Annotated[str, Strict(strict=True)]]`
+  - Default: `None`
+- `_headers` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_host_index` (Optional)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])]`
+  - Default: `0`
+
+**Description:**
+
+Get Market
+Endpoint for getting data about a specific market by its ticker. A market represents a specific binary outcome within an event that users can trade on (e.g., "Will candidate X win?"). Markets have yes/no positions, current prices, volume, and settlement rules.
+:param ticker: Market ticker (required)
+:type ticker: str
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_markets`
+
+**Signature:**
+```python
+def get_markets(limit: typing.Any = None, cursor: typing.Any = None, event_ticker: typing.Any = None, series_ticker: typing.Any = None, min_created_ts: typing.Any = None, max_created_ts: typing.Any = None, max_close_ts: typing.Any = None, min_close_ts: typing.Any = None, min_settled_ts: typing.Any = None, max_settled_ts: typing.Any = None, status: typing.Any = None, tickers: typing.Any = None, mve_filter: typing.Any = None):
+```
+
+**Parameters:**
+
+- `limit` (Optional)
+  - Type: `typing.Any`
+  - Default: `None`
+- `cursor` (Optional)
+  - Type: `typing.Any`
+  - Default: `None`
+- `event_ticker` (Optional)
+  - Type: `typing.Any`
+  - Default: `None`
+- `series_ticker` (Optional)
+  - Type: `typing.Any`
+  - Default: `None`
+- `min_created_ts` (Optional)
+  - Type: `typing.Any`
+  - Default: `None`
+- `max_created_ts` (Optional)
+  - Type: `typing.Any`
+  - Default: `None`
+- `max_close_ts` (Optional)
+  - Type: `typing.Any`
+  - Default: `None`
+- `min_close_ts` (Optional)
+  - Type: `typing.Any`
+  - Default: `None`
+- `min_settled_ts` (Optional)
+  - Type: `typing.Any`
+  - Default: `None`
+- `max_settled_ts` (Optional)
+  - Type: `typing.Any`
+  - Default: `None`
+- `status` (Optional)
+  - Type: `typing.Any`
+  - Default: `None`
+- `tickers` (Optional)
+  - Type: `typing.Any`
+  - Default: `None`
+- `mve_filter` (Optional)
+  - Type: `typing.Any`
+  - Default: `None`
+
+**Description:**
+
+Get Markets
+Filter by market status. Possible values: `unopened`, `open`, `closed`, `settled`. Leave empty to return markets with any status.  - Only one `status` filter may be supplied at a time.   - Timestamp filters will be mutually exclusive from other timestamp filters and certain status filters.   | Compatible Timestamp Filters | Additional Status Filters|  |------------------------------|--------------------------|  | min_created_ts, max_created_ts | `unopened`, `open`, *empty* |  | min_close_ts, max_close_ts | `closed`, *empty* |  | min_settled_ts, max_settled_ts | `settled`, *empty* |
+:param limit: Number of results per page. Defaults to 100. Maximum value is 1000.
+:type limit: int
+:param cursor: Pagination cursor. Use the cursor value returned from the previous response to get the next page of results. Leave empty for the first page.
+:type cursor: str
+:param event_ticker: Event ticker of desired positions. Multiple event tickers can be provided as a comma-separated list (maximum 10).
+:type event_ticker: str
+:param series_ticker: Filter by series ticker
+:type series_ticker: str
+:param min_created_ts: Filter items that created after this Unix timestamp
+:type min_created_ts: int
+:param max_created_ts: Filter items that created before this Unix timestamp
+:type max_created_ts: int
+:param max_close_ts: Filter items that close before this Unix timestamp
+:type max_close_ts: int
+:param min_close_ts: Filter items that close after this Unix timestamp
+:type min_close_ts: int
+:param min_settled_ts: Filter items that settled after this Unix timestamp
+:type min_settled_ts: int
+:param max_settled_ts: Filter items that settled before this Unix timestamp
+:type max_settled_ts: int
+:param status: Filter by market status. Possible values are 'unopened', 'open', 'closed', 'settled'. Leave empty to return markets with any status.
+:type status: str
+:param tickers: Filter by specific market tickers. Comma-separated list of market tickers to retrieve.
+:type tickers: str
+:param mve_filter: Filter by multivariate events (combos). 'only' returns only multivariate events, 'exclude' excludes multivariate events.
+:type mve_filter: str
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_markets`
+
+**Signature:**
+```python
+def get_markets(limit: typing.Any = None, cursor: typing.Any = None, event_ticker: typing.Any = None, series_ticker: typing.Any = None, min_created_ts: typing.Any = None, max_created_ts: typing.Any = None, max_close_ts: typing.Any = None, min_close_ts: typing.Any = None, min_settled_ts: typing.Any = None, max_settled_ts: typing.Any = None, status: typing.Any = None, tickers: typing.Any = None, mve_filter: typing.Any = None):
+```
+
+**Parameters:**
+
+- `limit` (Optional)
+  - Type: `typing.Any`
+  - Default: `None`
+- `cursor` (Optional)
+  - Type: `typing.Any`
+  - Default: `None`
+- `event_ticker` (Optional)
+  - Type: `typing.Any`
+  - Default: `None`
+- `series_ticker` (Optional)
+  - Type: `typing.Any`
+  - Default: `None`
+- `min_created_ts` (Optional)
+  - Type: `typing.Any`
+  - Default: `None`
+- `max_created_ts` (Optional)
+  - Type: `typing.Any`
+  - Default: `None`
+- `max_close_ts` (Optional)
+  - Type: `typing.Any`
+  - Default: `None`
+- `min_close_ts` (Optional)
+  - Type: `typing.Any`
+  - Default: `None`
+- `min_settled_ts` (Optional)
+  - Type: `typing.Any`
+  - Default: `None`
+- `max_settled_ts` (Optional)
+  - Type: `typing.Any`
+  - Default: `None`
+- `status` (Optional)
+  - Type: `typing.Any`
+  - Default: `None`
+- `tickers` (Optional)
+  - Type: `typing.Any`
+  - Default: `None`
+- `mve_filter` (Optional)
+  - Type: `typing.Any`
+  - Default: `None`
+
+**Description:**
+
+Get Markets
+Filter by market status. Possible values: `unopened`, `open`, `closed`, `settled`. Leave empty to return markets with any status.  - Only one `status` filter may be supplied at a time.   - Timestamp filters will be mutually exclusive from other timestamp filters and certain status filters.   | Compatible Timestamp Filters | Additional Status Filters|  |------------------------------|--------------------------|  | min_created_ts, max_created_ts | `unopened`, `open`, *empty* |  | min_close_ts, max_close_ts | `closed`, *empty* |  | min_settled_ts, max_settled_ts | `settled`, *empty* |
+:param limit: Number of results per page. Defaults to 100. Maximum value is 1000.
+:type limit: int
+:param cursor: Pagination cursor. Use the cursor value returned from the previous response to get the next page of results. Leave empty for the first page.
+:type cursor: str
+:param event_ticker: Event ticker of desired positions. Multiple event tickers can be provided as a comma-separated list (maximum 10).
+:type event_ticker: str
+:param series_ticker: Filter by series ticker
+:type series_ticker: str
+:param min_created_ts: Filter items that created after this Unix timestamp
+:type min_created_ts: int
+:param max_created_ts: Filter items that created before this Unix timestamp
+:type max_created_ts: int
+:param max_close_ts: Filter items that close before this Unix timestamp
+:type max_close_ts: int
+:param min_close_ts: Filter items that close after this Unix timestamp
+:type min_close_ts: int
+:param min_settled_ts: Filter items that settled after this Unix timestamp
+:type min_settled_ts: int
+:param max_settled_ts: Filter items that settled before this Unix timestamp
+:type max_settled_ts: int
+:param status: Filter by market status. Possible values are 'unopened', 'open', 'closed', 'settled'. Leave empty to return markets with any status.
+:type status: str
+:param tickers: Filter by specific market tickers. Comma-separated list of market tickers to retrieve.
+:type tickers: str
+:param mve_filter: Filter by multivariate events (combos). 'only' returns only multivariate events, 'exclude' excludes multivariate events.
+:type mve_filter: str
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_markets_with_http_info`
+
+**Signature:**
+```python
+def get_markets_with_http_info(limit: typing.Annotated[typing.Optional[typing.Annotated[int, FieldInfo(annotation=NoneType, required=True, metadata=[Strict(strict=True), Ge(ge=1), Le(le=1000)])]], FieldInfo(annotation=NoneType, required=True, description='Number of results per page. Defaults to 100. Maximum value is 1000.')] = None, cursor: typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Pagination cursor. Use the cursor value returned from the previous response to get the next page of results. Leave empty for the first page.')] = None, event_ticker: typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Event ticker of desired positions. Multiple event tickers can be provided as a comma-separated list (maximum 10).')] = None, series_ticker: typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter by series ticker')] = None, min_created_ts: typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items that created after this Unix timestamp')] = None, max_created_ts: typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items that created before this Unix timestamp')] = None, max_close_ts: typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items that close before this Unix timestamp')] = None, min_close_ts: typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items that close after this Unix timestamp')] = None, min_settled_ts: typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items that settled after this Unix timestamp')] = None, max_settled_ts: typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items that settled before this Unix timestamp')] = None, status: typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description="Filter by market status. Possible values are 'unopened', 'open', 'closed', 'settled'. Leave empty to return markets with any status.")] = None, tickers: typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter by specific market tickers. Comma-separated list of market tickers to retrieve.')] = None, mve_filter: typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description="Filter by multivariate events (combos). 'only' returns only multivariate events, 'exclude' excludes multivariate events.")] = None, _request_timeout: typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]] = None, _request_auth: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _content_type: typing.Optional[typing.Annotated[str, Strict(strict=True)]] = None, _headers: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _host_index: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])] = 0):
+```
+
+**Parameters:**
+
+- `limit` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[int, FieldInfo(annotation=NoneType, required=True, metadata=[Strict(strict=True), Ge(ge=1), Le(le=1000)])]], FieldInfo(annotation=NoneType, required=True, description='Number of results per page. Defaults to 100. Maximum value is 1000.')]`
+  - Default: `None`
+- `cursor` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Pagination cursor. Use the cursor value returned from the previous response to get the next page of results. Leave empty for the first page.')]`
+  - Default: `None`
+- `event_ticker` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Event ticker of desired positions. Multiple event tickers can be provided as a comma-separated list (maximum 10).')]`
+  - Default: `None`
+- `series_ticker` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter by series ticker')]`
+  - Default: `None`
+- `min_created_ts` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items that created after this Unix timestamp')]`
+  - Default: `None`
+- `max_created_ts` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items that created before this Unix timestamp')]`
+  - Default: `None`
+- `max_close_ts` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items that close before this Unix timestamp')]`
+  - Default: `None`
+- `min_close_ts` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items that close after this Unix timestamp')]`
+  - Default: `None`
+- `min_settled_ts` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items that settled after this Unix timestamp')]`
+  - Default: `None`
+- `max_settled_ts` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items that settled before this Unix timestamp')]`
+  - Default: `None`
+- `status` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description="Filter by market status. Possible values are 'unopened', 'open', 'closed', 'settled'. Leave empty to return markets with any status.")]`
+  - Default: `None`
+- `tickers` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter by specific market tickers. Comma-separated list of market tickers to retrieve.')]`
+  - Default: `None`
+- `mve_filter` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description="Filter by multivariate events (combos). 'only' returns only multivariate events, 'exclude' excludes multivariate events.")]`
+  - Default: `None`
+- `_request_timeout` (Optional)
+  - Type: `typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]]`
+  - Default: `None`
+- `_request_auth` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_content_type` (Optional)
+  - Type: `typing.Optional[typing.Annotated[str, Strict(strict=True)]]`
+  - Default: `None`
+- `_headers` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_host_index` (Optional)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])]`
+  - Default: `0`
+
+**Description:**
+
+Get Markets
+Filter by market status. Possible values: `unopened`, `open`, `closed`, `settled`. Leave empty to return markets with any status.  - Only one `status` filter may be supplied at a time.   - Timestamp filters will be mutually exclusive from other timestamp filters and certain status filters.   | Compatible Timestamp Filters | Additional Status Filters|  |------------------------------|--------------------------|  | min_created_ts, max_created_ts | `unopened`, `open`, *empty* |  | min_close_ts, max_close_ts | `closed`, *empty* |  | min_settled_ts, max_settled_ts | `settled`, *empty* |
+:param limit: Number of results per page. Defaults to 100. Maximum value is 1000.
+:type limit: int
+:param cursor: Pagination cursor. Use the cursor value returned from the previous response to get the next page of results. Leave empty for the first page.
+:type cursor: str
+:param event_ticker: Event ticker of desired positions. Multiple event tickers can be provided as a comma-separated list (maximum 10).
+:type event_ticker: str
+:param series_ticker: Filter by series ticker
+:type series_ticker: str
+:param min_created_ts: Filter items that created after this Unix timestamp
+:type min_created_ts: int
+:param max_created_ts: Filter items that created before this Unix timestamp
+:type max_created_ts: int
+:param max_close_ts: Filter items that close before this Unix timestamp
+:type max_close_ts: int
+:param min_close_ts: Filter items that close after this Unix timestamp
+:type min_close_ts: int
+:param min_settled_ts: Filter items that settled after this Unix timestamp
+:type min_settled_ts: int
+:param max_settled_ts: Filter items that settled before this Unix timestamp
+:type max_settled_ts: int
+:param status: Filter by market status. Possible values are 'unopened', 'open', 'closed', 'settled'. Leave empty to return markets with any status.
+:type status: str
+:param tickers: Filter by specific market tickers. Comma-separated list of market tickers to retrieve.
+:type tickers: str
+:param mve_filter: Filter by multivariate events (combos). 'only' returns only multivariate events, 'exclude' excludes multivariate events.
+:type mve_filter: str
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_markets_with_http_info`
+
+**Signature:**
+```python
+def get_markets_with_http_info(limit: typing.Annotated[typing.Optional[typing.Annotated[int, FieldInfo(annotation=NoneType, required=True, metadata=[Strict(strict=True), Ge(ge=1), Le(le=1000)])]], FieldInfo(annotation=NoneType, required=True, description='Number of results per page. Defaults to 100. Maximum value is 1000.')] = None, cursor: typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Pagination cursor. Use the cursor value returned from the previous response to get the next page of results. Leave empty for the first page.')] = None, event_ticker: typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Event ticker of desired positions. Multiple event tickers can be provided as a comma-separated list (maximum 10).')] = None, series_ticker: typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter by series ticker')] = None, min_created_ts: typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items that created after this Unix timestamp')] = None, max_created_ts: typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items that created before this Unix timestamp')] = None, max_close_ts: typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items that close before this Unix timestamp')] = None, min_close_ts: typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items that close after this Unix timestamp')] = None, min_settled_ts: typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items that settled after this Unix timestamp')] = None, max_settled_ts: typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items that settled before this Unix timestamp')] = None, status: typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description="Filter by market status. Possible values are 'unopened', 'open', 'closed', 'settled'. Leave empty to return markets with any status.")] = None, tickers: typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter by specific market tickers. Comma-separated list of market tickers to retrieve.')] = None, mve_filter: typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description="Filter by multivariate events (combos). 'only' returns only multivariate events, 'exclude' excludes multivariate events.")] = None, _request_timeout: typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]] = None, _request_auth: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _content_type: typing.Optional[typing.Annotated[str, Strict(strict=True)]] = None, _headers: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _host_index: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])] = 0):
+```
+
+**Parameters:**
+
+- `limit` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[int, FieldInfo(annotation=NoneType, required=True, metadata=[Strict(strict=True), Ge(ge=1), Le(le=1000)])]], FieldInfo(annotation=NoneType, required=True, description='Number of results per page. Defaults to 100. Maximum value is 1000.')]`
+  - Default: `None`
+- `cursor` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Pagination cursor. Use the cursor value returned from the previous response to get the next page of results. Leave empty for the first page.')]`
+  - Default: `None`
+- `event_ticker` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Event ticker of desired positions. Multiple event tickers can be provided as a comma-separated list (maximum 10).')]`
+  - Default: `None`
+- `series_ticker` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter by series ticker')]`
+  - Default: `None`
+- `min_created_ts` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items that created after this Unix timestamp')]`
+  - Default: `None`
+- `max_created_ts` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items that created before this Unix timestamp')]`
+  - Default: `None`
+- `max_close_ts` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items that close before this Unix timestamp')]`
+  - Default: `None`
+- `min_close_ts` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items that close after this Unix timestamp')]`
+  - Default: `None`
+- `min_settled_ts` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items that settled after this Unix timestamp')]`
+  - Default: `None`
+- `max_settled_ts` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items that settled before this Unix timestamp')]`
+  - Default: `None`
+- `status` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description="Filter by market status. Possible values are 'unopened', 'open', 'closed', 'settled'. Leave empty to return markets with any status.")]`
+  - Default: `None`
+- `tickers` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter by specific market tickers. Comma-separated list of market tickers to retrieve.')]`
+  - Default: `None`
+- `mve_filter` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description="Filter by multivariate events (combos). 'only' returns only multivariate events, 'exclude' excludes multivariate events.")]`
+  - Default: `None`
+- `_request_timeout` (Optional)
+  - Type: `typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]]`
+  - Default: `None`
+- `_request_auth` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_content_type` (Optional)
+  - Type: `typing.Optional[typing.Annotated[str, Strict(strict=True)]]`
+  - Default: `None`
+- `_headers` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_host_index` (Optional)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])]`
+  - Default: `0`
+
+**Description:**
+
+Get Markets
+Filter by market status. Possible values: `unopened`, `open`, `closed`, `settled`. Leave empty to return markets with any status.  - Only one `status` filter may be supplied at a time.   - Timestamp filters will be mutually exclusive from other timestamp filters and certain status filters.   | Compatible Timestamp Filters | Additional Status Filters|  |------------------------------|--------------------------|  | min_created_ts, max_created_ts | `unopened`, `open`, *empty* |  | min_close_ts, max_close_ts | `closed`, *empty* |  | min_settled_ts, max_settled_ts | `settled`, *empty* |
+:param limit: Number of results per page. Defaults to 100. Maximum value is 1000.
+:type limit: int
+:param cursor: Pagination cursor. Use the cursor value returned from the previous response to get the next page of results. Leave empty for the first page.
+:type cursor: str
+:param event_ticker: Event ticker of desired positions. Multiple event tickers can be provided as a comma-separated list (maximum 10).
+:type event_ticker: str
+:param series_ticker: Filter by series ticker
+:type series_ticker: str
+:param min_created_ts: Filter items that created after this Unix timestamp
+:type min_created_ts: int
+:param max_created_ts: Filter items that created before this Unix timestamp
+:type max_created_ts: int
+:param max_close_ts: Filter items that close before this Unix timestamp
+:type max_close_ts: int
+:param min_close_ts: Filter items that close after this Unix timestamp
+:type min_close_ts: int
+:param min_settled_ts: Filter items that settled after this Unix timestamp
+:type min_settled_ts: int
+:param max_settled_ts: Filter items that settled before this Unix timestamp
+:type max_settled_ts: int
+:param status: Filter by market status. Possible values are 'unopened', 'open', 'closed', 'settled'. Leave empty to return markets with any status.
+:type status: str
+:param tickers: Filter by specific market tickers. Comma-separated list of market tickers to retrieve.
+:type tickers: str
+:param mve_filter: Filter by multivariate events (combos). 'only' returns only multivariate events, 'exclude' excludes multivariate events.
+:type mve_filter: str
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_markets_without_preload_content`
+
+**Signature:**
+```python
+def get_markets_without_preload_content(limit: typing.Annotated[typing.Optional[typing.Annotated[int, FieldInfo(annotation=NoneType, required=True, metadata=[Strict(strict=True), Ge(ge=1), Le(le=1000)])]], FieldInfo(annotation=NoneType, required=True, description='Number of results per page. Defaults to 100. Maximum value is 1000.')] = None, cursor: typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Pagination cursor. Use the cursor value returned from the previous response to get the next page of results. Leave empty for the first page.')] = None, event_ticker: typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Event ticker of desired positions. Multiple event tickers can be provided as a comma-separated list (maximum 10).')] = None, series_ticker: typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter by series ticker')] = None, min_created_ts: typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items that created after this Unix timestamp')] = None, max_created_ts: typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items that created before this Unix timestamp')] = None, max_close_ts: typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items that close before this Unix timestamp')] = None, min_close_ts: typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items that close after this Unix timestamp')] = None, min_settled_ts: typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items that settled after this Unix timestamp')] = None, max_settled_ts: typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items that settled before this Unix timestamp')] = None, status: typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description="Filter by market status. Possible values are 'unopened', 'open', 'closed', 'settled'. Leave empty to return markets with any status.")] = None, tickers: typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter by specific market tickers. Comma-separated list of market tickers to retrieve.')] = None, mve_filter: typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description="Filter by multivariate events (combos). 'only' returns only multivariate events, 'exclude' excludes multivariate events.")] = None, _request_timeout: typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]] = None, _request_auth: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _content_type: typing.Optional[typing.Annotated[str, Strict(strict=True)]] = None, _headers: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _host_index: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])] = 0):
+```
+
+**Parameters:**
+
+- `limit` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[int, FieldInfo(annotation=NoneType, required=True, metadata=[Strict(strict=True), Ge(ge=1), Le(le=1000)])]], FieldInfo(annotation=NoneType, required=True, description='Number of results per page. Defaults to 100. Maximum value is 1000.')]`
+  - Default: `None`
+- `cursor` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Pagination cursor. Use the cursor value returned from the previous response to get the next page of results. Leave empty for the first page.')]`
+  - Default: `None`
+- `event_ticker` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Event ticker of desired positions. Multiple event tickers can be provided as a comma-separated list (maximum 10).')]`
+  - Default: `None`
+- `series_ticker` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter by series ticker')]`
+  - Default: `None`
+- `min_created_ts` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items that created after this Unix timestamp')]`
+  - Default: `None`
+- `max_created_ts` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items that created before this Unix timestamp')]`
+  - Default: `None`
+- `max_close_ts` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items that close before this Unix timestamp')]`
+  - Default: `None`
+- `min_close_ts` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items that close after this Unix timestamp')]`
+  - Default: `None`
+- `min_settled_ts` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items that settled after this Unix timestamp')]`
+  - Default: `None`
+- `max_settled_ts` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items that settled before this Unix timestamp')]`
+  - Default: `None`
+- `status` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description="Filter by market status. Possible values are 'unopened', 'open', 'closed', 'settled'. Leave empty to return markets with any status.")]`
+  - Default: `None`
+- `tickers` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter by specific market tickers. Comma-separated list of market tickers to retrieve.')]`
+  - Default: `None`
+- `mve_filter` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description="Filter by multivariate events (combos). 'only' returns only multivariate events, 'exclude' excludes multivariate events.")]`
+  - Default: `None`
+- `_request_timeout` (Optional)
+  - Type: `typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]]`
+  - Default: `None`
+- `_request_auth` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_content_type` (Optional)
+  - Type: `typing.Optional[typing.Annotated[str, Strict(strict=True)]]`
+  - Default: `None`
+- `_headers` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_host_index` (Optional)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])]`
+  - Default: `0`
+
+**Description:**
+
+Get Markets
+Filter by market status. Possible values: `unopened`, `open`, `closed`, `settled`. Leave empty to return markets with any status.  - Only one `status` filter may be supplied at a time.   - Timestamp filters will be mutually exclusive from other timestamp filters and certain status filters.   | Compatible Timestamp Filters | Additional Status Filters|  |------------------------------|--------------------------|  | min_created_ts, max_created_ts | `unopened`, `open`, *empty* |  | min_close_ts, max_close_ts | `closed`, *empty* |  | min_settled_ts, max_settled_ts | `settled`, *empty* |
+:param limit: Number of results per page. Defaults to 100. Maximum value is 1000.
+:type limit: int
+:param cursor: Pagination cursor. Use the cursor value returned from the previous response to get the next page of results. Leave empty for the first page.
+:type cursor: str
+:param event_ticker: Event ticker of desired positions. Multiple event tickers can be provided as a comma-separated list (maximum 10).
+:type event_ticker: str
+:param series_ticker: Filter by series ticker
+:type series_ticker: str
+:param min_created_ts: Filter items that created after this Unix timestamp
+:type min_created_ts: int
+:param max_created_ts: Filter items that created before this Unix timestamp
+:type max_created_ts: int
+:param max_close_ts: Filter items that close before this Unix timestamp
+:type max_close_ts: int
+:param min_close_ts: Filter items that close after this Unix timestamp
+:type min_close_ts: int
+:param min_settled_ts: Filter items that settled after this Unix timestamp
+:type min_settled_ts: int
+:param max_settled_ts: Filter items that settled before this Unix timestamp
+:type max_settled_ts: int
+:param status: Filter by market status. Possible values are 'unopened', 'open', 'closed', 'settled'. Leave empty to return markets with any status.
+:type status: str
+:param tickers: Filter by specific market tickers. Comma-separated list of market tickers to retrieve.
+:type tickers: str
+:param mve_filter: Filter by multivariate events (combos). 'only' returns only multivariate events, 'exclude' excludes multivariate events.
+:type mve_filter: str
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_markets_without_preload_content`
+
+**Signature:**
+```python
+def get_markets_without_preload_content(limit: typing.Annotated[typing.Optional[typing.Annotated[int, FieldInfo(annotation=NoneType, required=True, metadata=[Strict(strict=True), Ge(ge=1), Le(le=1000)])]], FieldInfo(annotation=NoneType, required=True, description='Number of results per page. Defaults to 100. Maximum value is 1000.')] = None, cursor: typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Pagination cursor. Use the cursor value returned from the previous response to get the next page of results. Leave empty for the first page.')] = None, event_ticker: typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Event ticker of desired positions. Multiple event tickers can be provided as a comma-separated list (maximum 10).')] = None, series_ticker: typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter by series ticker')] = None, min_created_ts: typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items that created after this Unix timestamp')] = None, max_created_ts: typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items that created before this Unix timestamp')] = None, max_close_ts: typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items that close before this Unix timestamp')] = None, min_close_ts: typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items that close after this Unix timestamp')] = None, min_settled_ts: typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items that settled after this Unix timestamp')] = None, max_settled_ts: typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items that settled before this Unix timestamp')] = None, status: typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description="Filter by market status. Possible values are 'unopened', 'open', 'closed', 'settled'. Leave empty to return markets with any status.")] = None, tickers: typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter by specific market tickers. Comma-separated list of market tickers to retrieve.')] = None, mve_filter: typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description="Filter by multivariate events (combos). 'only' returns only multivariate events, 'exclude' excludes multivariate events.")] = None, _request_timeout: typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]] = None, _request_auth: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _content_type: typing.Optional[typing.Annotated[str, Strict(strict=True)]] = None, _headers: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _host_index: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])] = 0):
+```
+
+**Parameters:**
+
+- `limit` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[int, FieldInfo(annotation=NoneType, required=True, metadata=[Strict(strict=True), Ge(ge=1), Le(le=1000)])]], FieldInfo(annotation=NoneType, required=True, description='Number of results per page. Defaults to 100. Maximum value is 1000.')]`
+  - Default: `None`
+- `cursor` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Pagination cursor. Use the cursor value returned from the previous response to get the next page of results. Leave empty for the first page.')]`
+  - Default: `None`
+- `event_ticker` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Event ticker of desired positions. Multiple event tickers can be provided as a comma-separated list (maximum 10).')]`
+  - Default: `None`
+- `series_ticker` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter by series ticker')]`
+  - Default: `None`
+- `min_created_ts` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items that created after this Unix timestamp')]`
+  - Default: `None`
+- `max_created_ts` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items that created before this Unix timestamp')]`
+  - Default: `None`
+- `max_close_ts` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items that close before this Unix timestamp')]`
+  - Default: `None`
+- `min_close_ts` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items that close after this Unix timestamp')]`
+  - Default: `None`
+- `min_settled_ts` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items that settled after this Unix timestamp')]`
+  - Default: `None`
+- `max_settled_ts` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items that settled before this Unix timestamp')]`
+  - Default: `None`
+- `status` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description="Filter by market status. Possible values are 'unopened', 'open', 'closed', 'settled'. Leave empty to return markets with any status.")]`
+  - Default: `None`
+- `tickers` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter by specific market tickers. Comma-separated list of market tickers to retrieve.')]`
+  - Default: `None`
+- `mve_filter` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description="Filter by multivariate events (combos). 'only' returns only multivariate events, 'exclude' excludes multivariate events.")]`
+  - Default: `None`
+- `_request_timeout` (Optional)
+  - Type: `typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]]`
+  - Default: `None`
+- `_request_auth` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_content_type` (Optional)
+  - Type: `typing.Optional[typing.Annotated[str, Strict(strict=True)]]`
+  - Default: `None`
+- `_headers` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_host_index` (Optional)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])]`
+  - Default: `0`
+
+**Description:**
+
+Get Markets
+Filter by market status. Possible values: `unopened`, `open`, `closed`, `settled`. Leave empty to return markets with any status.  - Only one `status` filter may be supplied at a time.   - Timestamp filters will be mutually exclusive from other timestamp filters and certain status filters.   | Compatible Timestamp Filters | Additional Status Filters|  |------------------------------|--------------------------|  | min_created_ts, max_created_ts | `unopened`, `open`, *empty* |  | min_close_ts, max_close_ts | `closed`, *empty* |  | min_settled_ts, max_settled_ts | `settled`, *empty* |
+:param limit: Number of results per page. Defaults to 100. Maximum value is 1000.
+:type limit: int
+:param cursor: Pagination cursor. Use the cursor value returned from the previous response to get the next page of results. Leave empty for the first page.
+:type cursor: str
+:param event_ticker: Event ticker of desired positions. Multiple event tickers can be provided as a comma-separated list (maximum 10).
+:type event_ticker: str
+:param series_ticker: Filter by series ticker
+:type series_ticker: str
+:param min_created_ts: Filter items that created after this Unix timestamp
+:type min_created_ts: int
+:param max_created_ts: Filter items that created before this Unix timestamp
+:type max_created_ts: int
+:param max_close_ts: Filter items that close before this Unix timestamp
+:type max_close_ts: int
+:param min_close_ts: Filter items that close after this Unix timestamp
+:type min_close_ts: int
+:param min_settled_ts: Filter items that settled after this Unix timestamp
+:type min_settled_ts: int
+:param max_settled_ts: Filter items that settled before this Unix timestamp
+:type max_settled_ts: int
+:param status: Filter by market status. Possible values are 'unopened', 'open', 'closed', 'settled'. Leave empty to return markets with any status.
+:type status: str
+:param tickers: Filter by specific market tickers. Comma-separated list of market tickers to retrieve.
+:type tickers: str
+:param mve_filter: Filter by multivariate events (combos). 'only' returns only multivariate events, 'exclude' excludes multivariate events.
+:type mve_filter: str
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+### Orders
+
+#### `get_market_orderbook`
+
+**Signature:**
+```python
+def get_market_orderbook(ticker: typing.Annotated[str, Strict(strict=True)], depth: typing.Any = None):
+```
+
+**Parameters:**
+
+- `ticker` (Required)
+  - Type: `typing.Annotated[str, Strict(strict=True)]`
+- `depth` (Optional)
+  - Type: `typing.Any`
+  - Default: `None`
+
+**Description:**
+
+Get Market Orderbook
+Endpoint for getting the current order book for a specific market.  The order book shows all active bid orders for both yes and no sides of a binary market. It returns yes bids and no bids only (no asks are returned). This is because in binary markets, a bid for yes at price X is equivalent to an ask for no at price (100-X). For example, a yes bid at 7¢ is the same as a no ask at 93¢, with identical contract sizes.  Each side shows price levels with their corresponding quantities and order counts, organized from best to worst prices.
+:param ticker: Market ticker (required)
+:type ticker: str
+:param depth: Depth of the orderbook to retrieve (0 or negative means all levels, 1-100 for specific depth)
+:type depth: int
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_market_orderbook`
+
+**Signature:**
+```python
+def get_market_orderbook(ticker: typing.Annotated[str, Strict(strict=True)], depth: typing.Any = None):
+```
+
+**Parameters:**
+
+- `ticker` (Required)
+  - Type: `typing.Annotated[str, Strict(strict=True)]`
+- `depth` (Optional)
+  - Type: `typing.Any`
+  - Default: `None`
+
+**Description:**
+
+Get Market Orderbook
+Endpoint for getting the current order book for a specific market.  The order book shows all active bid orders for both yes and no sides of a binary market. It returns yes bids and no bids only (no asks are returned). This is because in binary markets, a bid for yes at price X is equivalent to an ask for no at price (100-X). For example, a yes bid at 7¢ is the same as a no ask at 93¢, with identical contract sizes.  Each side shows price levels with their corresponding quantities and order counts, organized from best to worst prices.
+:param ticker: Market ticker (required)
+:type ticker: str
+:param depth: Depth of the orderbook to retrieve (0 or negative means all levels, 1-100 for specific depth)
+:type depth: int
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_market_orderbook_with_http_info`
+
+**Signature:**
+```python
+def get_market_orderbook_with_http_info(ticker: typing.Annotated[str, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, description='Market ticker')], depth: typing.Annotated[typing.Optional[typing.Annotated[int, FieldInfo(annotation=NoneType, required=True, metadata=[Strict(strict=True), Ge(ge=0), Le(le=100)])]], FieldInfo(annotation=NoneType, required=True, description='Depth of the orderbook to retrieve (0 or negative means all levels, 1-100 for specific depth)')] = None, _request_timeout: typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]] = None, _request_auth: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _content_type: typing.Optional[typing.Annotated[str, Strict(strict=True)]] = None, _headers: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _host_index: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])] = 0):
+```
+
+**Parameters:**
+
+- `ticker` (Required)
+  - Type: `typing.Annotated[str, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, description='Market ticker')]`
+- `depth` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[int, FieldInfo(annotation=NoneType, required=True, metadata=[Strict(strict=True), Ge(ge=0), Le(le=100)])]], FieldInfo(annotation=NoneType, required=True, description='Depth of the orderbook to retrieve (0 or negative means all levels, 1-100 for specific depth)')]`
+  - Default: `None`
+- `_request_timeout` (Optional)
+  - Type: `typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]]`
+  - Default: `None`
+- `_request_auth` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_content_type` (Optional)
+  - Type: `typing.Optional[typing.Annotated[str, Strict(strict=True)]]`
+  - Default: `None`
+- `_headers` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_host_index` (Optional)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])]`
+  - Default: `0`
+
+**Description:**
+
+Get Market Orderbook
+Endpoint for getting the current order book for a specific market.  The order book shows all active bid orders for both yes and no sides of a binary market. It returns yes bids and no bids only (no asks are returned). This is because in binary markets, a bid for yes at price X is equivalent to an ask for no at price (100-X). For example, a yes bid at 7¢ is the same as a no ask at 93¢, with identical contract sizes.  Each side shows price levels with their corresponding quantities and order counts, organized from best to worst prices.
+:param ticker: Market ticker (required)
+:type ticker: str
+:param depth: Depth of the orderbook to retrieve (0 or negative means all levels, 1-100 for specific depth)
+:type depth: int
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_market_orderbook_with_http_info`
+
+**Signature:**
+```python
+def get_market_orderbook_with_http_info(ticker: typing.Annotated[str, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, description='Market ticker')], depth: typing.Annotated[typing.Optional[typing.Annotated[int, FieldInfo(annotation=NoneType, required=True, metadata=[Strict(strict=True), Ge(ge=0), Le(le=100)])]], FieldInfo(annotation=NoneType, required=True, description='Depth of the orderbook to retrieve (0 or negative means all levels, 1-100 for specific depth)')] = None, _request_timeout: typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]] = None, _request_auth: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _content_type: typing.Optional[typing.Annotated[str, Strict(strict=True)]] = None, _headers: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _host_index: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])] = 0):
+```
+
+**Parameters:**
+
+- `ticker` (Required)
+  - Type: `typing.Annotated[str, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, description='Market ticker')]`
+- `depth` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[int, FieldInfo(annotation=NoneType, required=True, metadata=[Strict(strict=True), Ge(ge=0), Le(le=100)])]], FieldInfo(annotation=NoneType, required=True, description='Depth of the orderbook to retrieve (0 or negative means all levels, 1-100 for specific depth)')]`
+  - Default: `None`
+- `_request_timeout` (Optional)
+  - Type: `typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]]`
+  - Default: `None`
+- `_request_auth` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_content_type` (Optional)
+  - Type: `typing.Optional[typing.Annotated[str, Strict(strict=True)]]`
+  - Default: `None`
+- `_headers` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_host_index` (Optional)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])]`
+  - Default: `0`
+
+**Description:**
+
+Get Market Orderbook
+Endpoint for getting the current order book for a specific market.  The order book shows all active bid orders for both yes and no sides of a binary market. It returns yes bids and no bids only (no asks are returned). This is because in binary markets, a bid for yes at price X is equivalent to an ask for no at price (100-X). For example, a yes bid at 7¢ is the same as a no ask at 93¢, with identical contract sizes.  Each side shows price levels with their corresponding quantities and order counts, organized from best to worst prices.
+:param ticker: Market ticker (required)
+:type ticker: str
+:param depth: Depth of the orderbook to retrieve (0 or negative means all levels, 1-100 for specific depth)
+:type depth: int
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_market_orderbook_without_preload_content`
+
+**Signature:**
+```python
+def get_market_orderbook_without_preload_content(ticker: typing.Annotated[str, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, description='Market ticker')], depth: typing.Annotated[typing.Optional[typing.Annotated[int, FieldInfo(annotation=NoneType, required=True, metadata=[Strict(strict=True), Ge(ge=0), Le(le=100)])]], FieldInfo(annotation=NoneType, required=True, description='Depth of the orderbook to retrieve (0 or negative means all levels, 1-100 for specific depth)')] = None, _request_timeout: typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]] = None, _request_auth: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _content_type: typing.Optional[typing.Annotated[str, Strict(strict=True)]] = None, _headers: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _host_index: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])] = 0):
+```
+
+**Parameters:**
+
+- `ticker` (Required)
+  - Type: `typing.Annotated[str, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, description='Market ticker')]`
+- `depth` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[int, FieldInfo(annotation=NoneType, required=True, metadata=[Strict(strict=True), Ge(ge=0), Le(le=100)])]], FieldInfo(annotation=NoneType, required=True, description='Depth of the orderbook to retrieve (0 or negative means all levels, 1-100 for specific depth)')]`
+  - Default: `None`
+- `_request_timeout` (Optional)
+  - Type: `typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]]`
+  - Default: `None`
+- `_request_auth` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_content_type` (Optional)
+  - Type: `typing.Optional[typing.Annotated[str, Strict(strict=True)]]`
+  - Default: `None`
+- `_headers` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_host_index` (Optional)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])]`
+  - Default: `0`
+
+**Description:**
+
+Get Market Orderbook
+Endpoint for getting the current order book for a specific market.  The order book shows all active bid orders for both yes and no sides of a binary market. It returns yes bids and no bids only (no asks are returned). This is because in binary markets, a bid for yes at price X is equivalent to an ask for no at price (100-X). For example, a yes bid at 7¢ is the same as a no ask at 93¢, with identical contract sizes.  Each side shows price levels with their corresponding quantities and order counts, organized from best to worst prices.
+:param ticker: Market ticker (required)
+:type ticker: str
+:param depth: Depth of the orderbook to retrieve (0 or negative means all levels, 1-100 for specific depth)
+:type depth: int
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_market_orderbook_without_preload_content`
+
+**Signature:**
+```python
+def get_market_orderbook_without_preload_content(ticker: typing.Annotated[str, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, description='Market ticker')], depth: typing.Annotated[typing.Optional[typing.Annotated[int, FieldInfo(annotation=NoneType, required=True, metadata=[Strict(strict=True), Ge(ge=0), Le(le=100)])]], FieldInfo(annotation=NoneType, required=True, description='Depth of the orderbook to retrieve (0 or negative means all levels, 1-100 for specific depth)')] = None, _request_timeout: typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]] = None, _request_auth: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _content_type: typing.Optional[typing.Annotated[str, Strict(strict=True)]] = None, _headers: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _host_index: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])] = 0):
+```
+
+**Parameters:**
+
+- `ticker` (Required)
+  - Type: `typing.Annotated[str, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, description='Market ticker')]`
+- `depth` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[int, FieldInfo(annotation=NoneType, required=True, metadata=[Strict(strict=True), Ge(ge=0), Le(le=100)])]], FieldInfo(annotation=NoneType, required=True, description='Depth of the orderbook to retrieve (0 or negative means all levels, 1-100 for specific depth)')]`
+  - Default: `None`
+- `_request_timeout` (Optional)
+  - Type: `typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]]`
+  - Default: `None`
+- `_request_auth` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_content_type` (Optional)
+  - Type: `typing.Optional[typing.Annotated[str, Strict(strict=True)]]`
+  - Default: `None`
+- `_headers` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_host_index` (Optional)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])]`
+  - Default: `0`
+
+**Description:**
+
+Get Market Orderbook
+Endpoint for getting the current order book for a specific market.  The order book shows all active bid orders for both yes and no sides of a binary market. It returns yes bids and no bids only (no asks are returned). This is because in binary markets, a bid for yes at price X is equivalent to an ask for no at price (100-X). For example, a yes bid at 7¢ is the same as a no ask at 93¢, with identical contract sizes.  Each side shows price levels with their corresponding quantities and order counts, organized from best to worst prices.
+:param ticker: Market ticker (required)
+:type ticker: str
+:param depth: Depth of the orderbook to retrieve (0 or negative means all levels, 1-100 for specific depth)
+:type depth: int
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+### Series
+
+#### `get_series`
+
+**Signature:**
+```python
+def get_series(series_ticker: typing.Annotated[str, Strict(strict=True)]):
+```
+
+**Parameters:**
+
+- `series_ticker` (Required)
+  - Type: `typing.Annotated[str, Strict(strict=True)]`
+
+**Description:**
+
+Get Series
+Endpoint for getting data about a specific series by its ticker.  A series represents a template for recurring events that follow the same format and rules (e.g., "Monthly Jobs Report", "Weekly Initial Jobless Claims", "Daily Weather in NYC"). Series define the structure, settlement sources, and metadata that will be applied to each recurring event instance within that series.
+:param series_ticker: The ticker of the series to retrieve (required)
+:type series_ticker: str
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_series`
+
+**Signature:**
+```python
+def get_series(series_ticker: typing.Annotated[str, Strict(strict=True)]):
+```
+
+**Parameters:**
+
+- `series_ticker` (Required)
+  - Type: `typing.Annotated[str, Strict(strict=True)]`
+
+**Description:**
+
+Get Series
+Endpoint for getting data about a specific series by its ticker.  A series represents a template for recurring events that follow the same format and rules (e.g., "Monthly Jobs Report", "Weekly Initial Jobless Claims", "Daily Weather in NYC"). Series define the structure, settlement sources, and metadata that will be applied to each recurring event instance within that series.
+:param series_ticker: The ticker of the series to retrieve (required)
+:type series_ticker: str
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_series_list`
+
+**Signature:**
+```python
+def get_series_list(category: typing.Any = None, tags: typing.Any = None, include_product_metadata: typing.Any = None):
+```
+
+**Parameters:**
+
+- `category` (Optional)
+  - Type: `typing.Any`
+  - Default: `None`
+- `tags` (Optional)
+  - Type: `typing.Any`
+  - Default: `None`
+- `include_product_metadata` (Optional)
+  - Type: `typing.Any`
+  - Default: `None`
+
+**Description:**
+
+Get Series List
+Endpoint for getting data about multiple series with specified filters.  A series represents a template for recurring events that follow the same format and rules (e.g., "Monthly Jobs Report", "Weekly Initial Jobless Claims", "Daily Weather in NYC"). This endpoint allows you to browse and discover available series templates by category.
+:param category:
+:type category: str
+:param tags:
+:type tags: str
+:param include_product_metadata:
+:type include_product_metadata: bool
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_series_list`
+
+**Signature:**
+```python
+def get_series_list(category: typing.Any = None, tags: typing.Any = None, include_product_metadata: typing.Any = None):
+```
+
+**Parameters:**
+
+- `category` (Optional)
+  - Type: `typing.Any`
+  - Default: `None`
+- `tags` (Optional)
+  - Type: `typing.Any`
+  - Default: `None`
+- `include_product_metadata` (Optional)
+  - Type: `typing.Any`
+  - Default: `None`
+
+**Description:**
+
+Get Series List
+Endpoint for getting data about multiple series with specified filters.  A series represents a template for recurring events that follow the same format and rules (e.g., "Monthly Jobs Report", "Weekly Initial Jobless Claims", "Daily Weather in NYC"). This endpoint allows you to browse and discover available series templates by category.
+:param category:
+:type category: str
+:param tags:
+:type tags: str
+:param include_product_metadata:
+:type include_product_metadata: bool
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_series_list_with_http_info`
+
+**Signature:**
+```python
+def get_series_list_with_http_info(category: typing.Optional[typing.Annotated[str, Strict(strict=True)]] = None, tags: typing.Optional[typing.Annotated[str, Strict(strict=True)]] = None, include_product_metadata: typing.Optional[typing.Annotated[bool, Strict(strict=True)]] = None, _request_timeout: typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]] = None, _request_auth: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _content_type: typing.Optional[typing.Annotated[str, Strict(strict=True)]] = None, _headers: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _host_index: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])] = 0):
+```
+
+**Parameters:**
+
+- `category` (Optional)
+  - Type: `typing.Optional[typing.Annotated[str, Strict(strict=True)]]`
+  - Default: `None`
+- `tags` (Optional)
+  - Type: `typing.Optional[typing.Annotated[str, Strict(strict=True)]]`
+  - Default: `None`
+- `include_product_metadata` (Optional)
+  - Type: `typing.Optional[typing.Annotated[bool, Strict(strict=True)]]`
+  - Default: `None`
+- `_request_timeout` (Optional)
+  - Type: `typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]]`
+  - Default: `None`
+- `_request_auth` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_content_type` (Optional)
+  - Type: `typing.Optional[typing.Annotated[str, Strict(strict=True)]]`
+  - Default: `None`
+- `_headers` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_host_index` (Optional)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])]`
+  - Default: `0`
+
+**Description:**
+
+Get Series List
+Endpoint for getting data about multiple series with specified filters.  A series represents a template for recurring events that follow the same format and rules (e.g., "Monthly Jobs Report", "Weekly Initial Jobless Claims", "Daily Weather in NYC"). This endpoint allows you to browse and discover available series templates by category.
+:param category:
+:type category: str
+:param tags:
+:type tags: str
+:param include_product_metadata:
+:type include_product_metadata: bool
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_series_list_with_http_info`
+
+**Signature:**
+```python
+def get_series_list_with_http_info(category: typing.Optional[typing.Annotated[str, Strict(strict=True)]] = None, tags: typing.Optional[typing.Annotated[str, Strict(strict=True)]] = None, include_product_metadata: typing.Optional[typing.Annotated[bool, Strict(strict=True)]] = None, _request_timeout: typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]] = None, _request_auth: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _content_type: typing.Optional[typing.Annotated[str, Strict(strict=True)]] = None, _headers: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _host_index: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])] = 0):
+```
+
+**Parameters:**
+
+- `category` (Optional)
+  - Type: `typing.Optional[typing.Annotated[str, Strict(strict=True)]]`
+  - Default: `None`
+- `tags` (Optional)
+  - Type: `typing.Optional[typing.Annotated[str, Strict(strict=True)]]`
+  - Default: `None`
+- `include_product_metadata` (Optional)
+  - Type: `typing.Optional[typing.Annotated[bool, Strict(strict=True)]]`
+  - Default: `None`
+- `_request_timeout` (Optional)
+  - Type: `typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]]`
+  - Default: `None`
+- `_request_auth` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_content_type` (Optional)
+  - Type: `typing.Optional[typing.Annotated[str, Strict(strict=True)]]`
+  - Default: `None`
+- `_headers` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_host_index` (Optional)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])]`
+  - Default: `0`
+
+**Description:**
+
+Get Series List
+Endpoint for getting data about multiple series with specified filters.  A series represents a template for recurring events that follow the same format and rules (e.g., "Monthly Jobs Report", "Weekly Initial Jobless Claims", "Daily Weather in NYC"). This endpoint allows you to browse and discover available series templates by category.
+:param category:
+:type category: str
+:param tags:
+:type tags: str
+:param include_product_metadata:
+:type include_product_metadata: bool
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_series_list_without_preload_content`
+
+**Signature:**
+```python
+def get_series_list_without_preload_content(category: typing.Optional[typing.Annotated[str, Strict(strict=True)]] = None, tags: typing.Optional[typing.Annotated[str, Strict(strict=True)]] = None, include_product_metadata: typing.Optional[typing.Annotated[bool, Strict(strict=True)]] = None, _request_timeout: typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]] = None, _request_auth: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _content_type: typing.Optional[typing.Annotated[str, Strict(strict=True)]] = None, _headers: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _host_index: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])] = 0):
+```
+
+**Parameters:**
+
+- `category` (Optional)
+  - Type: `typing.Optional[typing.Annotated[str, Strict(strict=True)]]`
+  - Default: `None`
+- `tags` (Optional)
+  - Type: `typing.Optional[typing.Annotated[str, Strict(strict=True)]]`
+  - Default: `None`
+- `include_product_metadata` (Optional)
+  - Type: `typing.Optional[typing.Annotated[bool, Strict(strict=True)]]`
+  - Default: `None`
+- `_request_timeout` (Optional)
+  - Type: `typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]]`
+  - Default: `None`
+- `_request_auth` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_content_type` (Optional)
+  - Type: `typing.Optional[typing.Annotated[str, Strict(strict=True)]]`
+  - Default: `None`
+- `_headers` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_host_index` (Optional)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])]`
+  - Default: `0`
+
+**Description:**
+
+Get Series List
+Endpoint for getting data about multiple series with specified filters.  A series represents a template for recurring events that follow the same format and rules (e.g., "Monthly Jobs Report", "Weekly Initial Jobless Claims", "Daily Weather in NYC"). This endpoint allows you to browse and discover available series templates by category.
+:param category:
+:type category: str
+:param tags:
+:type tags: str
+:param include_product_metadata:
+:type include_product_metadata: bool
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_series_list_without_preload_content`
+
+**Signature:**
+```python
+def get_series_list_without_preload_content(category: typing.Optional[typing.Annotated[str, Strict(strict=True)]] = None, tags: typing.Optional[typing.Annotated[str, Strict(strict=True)]] = None, include_product_metadata: typing.Optional[typing.Annotated[bool, Strict(strict=True)]] = None, _request_timeout: typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]] = None, _request_auth: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _content_type: typing.Optional[typing.Annotated[str, Strict(strict=True)]] = None, _headers: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _host_index: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])] = 0):
+```
+
+**Parameters:**
+
+- `category` (Optional)
+  - Type: `typing.Optional[typing.Annotated[str, Strict(strict=True)]]`
+  - Default: `None`
+- `tags` (Optional)
+  - Type: `typing.Optional[typing.Annotated[str, Strict(strict=True)]]`
+  - Default: `None`
+- `include_product_metadata` (Optional)
+  - Type: `typing.Optional[typing.Annotated[bool, Strict(strict=True)]]`
+  - Default: `None`
+- `_request_timeout` (Optional)
+  - Type: `typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]]`
+  - Default: `None`
+- `_request_auth` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_content_type` (Optional)
+  - Type: `typing.Optional[typing.Annotated[str, Strict(strict=True)]]`
+  - Default: `None`
+- `_headers` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_host_index` (Optional)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])]`
+  - Default: `0`
+
+**Description:**
+
+Get Series List
+Endpoint for getting data about multiple series with specified filters.  A series represents a template for recurring events that follow the same format and rules (e.g., "Monthly Jobs Report", "Weekly Initial Jobless Claims", "Daily Weather in NYC"). This endpoint allows you to browse and discover available series templates by category.
+:param category:
+:type category: str
+:param tags:
+:type tags: str
+:param include_product_metadata:
+:type include_product_metadata: bool
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_series_with_http_info`
+
+**Signature:**
+```python
+def get_series_with_http_info(series_ticker: typing.Annotated[str, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, description='The ticker of the series to retrieve')], _request_timeout: typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]] = None, _request_auth: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _content_type: typing.Optional[typing.Annotated[str, Strict(strict=True)]] = None, _headers: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _host_index: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])] = 0):
+```
+
+**Parameters:**
+
+- `series_ticker` (Required)
+  - Type: `typing.Annotated[str, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, description='The ticker of the series to retrieve')]`
+- `_request_timeout` (Optional)
+  - Type: `typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]]`
+  - Default: `None`
+- `_request_auth` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_content_type` (Optional)
+  - Type: `typing.Optional[typing.Annotated[str, Strict(strict=True)]]`
+  - Default: `None`
+- `_headers` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_host_index` (Optional)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])]`
+  - Default: `0`
+
+**Description:**
+
+Get Series
+Endpoint for getting data about a specific series by its ticker.  A series represents a template for recurring events that follow the same format and rules (e.g., "Monthly Jobs Report", "Weekly Initial Jobless Claims", "Daily Weather in NYC"). Series define the structure, settlement sources, and metadata that will be applied to each recurring event instance within that series.
+:param series_ticker: The ticker of the series to retrieve (required)
+:type series_ticker: str
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_series_with_http_info`
+
+**Signature:**
+```python
+def get_series_with_http_info(series_ticker: typing.Annotated[str, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, description='The ticker of the series to retrieve')], _request_timeout: typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]] = None, _request_auth: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _content_type: typing.Optional[typing.Annotated[str, Strict(strict=True)]] = None, _headers: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _host_index: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])] = 0):
+```
+
+**Parameters:**
+
+- `series_ticker` (Required)
+  - Type: `typing.Annotated[str, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, description='The ticker of the series to retrieve')]`
+- `_request_timeout` (Optional)
+  - Type: `typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]]`
+  - Default: `None`
+- `_request_auth` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_content_type` (Optional)
+  - Type: `typing.Optional[typing.Annotated[str, Strict(strict=True)]]`
+  - Default: `None`
+- `_headers` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_host_index` (Optional)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])]`
+  - Default: `0`
+
+**Description:**
+
+Get Series
+Endpoint for getting data about a specific series by its ticker.  A series represents a template for recurring events that follow the same format and rules (e.g., "Monthly Jobs Report", "Weekly Initial Jobless Claims", "Daily Weather in NYC"). Series define the structure, settlement sources, and metadata that will be applied to each recurring event instance within that series.
+:param series_ticker: The ticker of the series to retrieve (required)
+:type series_ticker: str
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_series_without_preload_content`
+
+**Signature:**
+```python
+def get_series_without_preload_content(series_ticker: typing.Annotated[str, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, description='The ticker of the series to retrieve')], _request_timeout: typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]] = None, _request_auth: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _content_type: typing.Optional[typing.Annotated[str, Strict(strict=True)]] = None, _headers: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _host_index: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])] = 0):
+```
+
+**Parameters:**
+
+- `series_ticker` (Required)
+  - Type: `typing.Annotated[str, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, description='The ticker of the series to retrieve')]`
+- `_request_timeout` (Optional)
+  - Type: `typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]]`
+  - Default: `None`
+- `_request_auth` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_content_type` (Optional)
+  - Type: `typing.Optional[typing.Annotated[str, Strict(strict=True)]]`
+  - Default: `None`
+- `_headers` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_host_index` (Optional)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])]`
+  - Default: `0`
+
+**Description:**
+
+Get Series
+Endpoint for getting data about a specific series by its ticker.  A series represents a template for recurring events that follow the same format and rules (e.g., "Monthly Jobs Report", "Weekly Initial Jobless Claims", "Daily Weather in NYC"). Series define the structure, settlement sources, and metadata that will be applied to each recurring event instance within that series.
+:param series_ticker: The ticker of the series to retrieve (required)
+:type series_ticker: str
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_series_without_preload_content`
+
+**Signature:**
+```python
+def get_series_without_preload_content(series_ticker: typing.Annotated[str, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, description='The ticker of the series to retrieve')], _request_timeout: typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]] = None, _request_auth: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _content_type: typing.Optional[typing.Annotated[str, Strict(strict=True)]] = None, _headers: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _host_index: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])] = 0):
+```
+
+**Parameters:**
+
+- `series_ticker` (Required)
+  - Type: `typing.Annotated[str, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, description='The ticker of the series to retrieve')]`
+- `_request_timeout` (Optional)
+  - Type: `typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]]`
+  - Default: `None`
+- `_request_auth` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_content_type` (Optional)
+  - Type: `typing.Optional[typing.Annotated[str, Strict(strict=True)]]`
+  - Default: `None`
+- `_headers` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_host_index` (Optional)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])]`
+  - Default: `0`
+
+**Description:**
+
+Get Series
+Endpoint for getting data about a specific series by its ticker.  A series represents a template for recurring events that follow the same format and rules (e.g., "Monthly Jobs Report", "Weekly Initial Jobless Claims", "Daily Weather in NYC"). Series define the structure, settlement sources, and metadata that will be applied to each recurring event instance within that series.
+:param series_ticker: The ticker of the series to retrieve (required)
+:type series_ticker: str
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+### Trades
+
+#### `get_trades`
+
+**Signature:**
+```python
+def get_trades(limit: typing.Any = None, cursor: typing.Any = None, ticker: typing.Any = None, min_ts: typing.Any = None, max_ts: typing.Any = None):
+```
+
+**Parameters:**
+
+- `limit` (Optional)
+  - Type: `typing.Any`
+  - Default: `None`
+- `cursor` (Optional)
+  - Type: `typing.Any`
+  - Default: `None`
+- `ticker` (Optional)
+  - Type: `typing.Any`
+  - Default: `None`
+- `min_ts` (Optional)
+  - Type: `typing.Any`
+  - Default: `None`
+- `max_ts` (Optional)
+  - Type: `typing.Any`
+  - Default: `None`
+
+**Description:**
+
+Get Trades
+Endpoint for getting all trades for all markets.  A trade represents a completed transaction between two users on a specific market. Each trade includes the market ticker, price, quantity, and timestamp information.  This endpoint returns a paginated response. Use the 'limit' parameter to control page size (1-1000, defaults to 100). The response includes a 'cursor' field - pass this value in the 'cursor' parameter of your next request to get the next page. An empty cursor indicates no more pages are available.
+:param limit: Number of results per page. Defaults to 100. Maximum value is 1000.
+:type limit: int
+:param cursor: Pagination cursor. Use the cursor value returned from the previous response to get the next page of results. Leave empty for the first page.
+:type cursor: str
+:param ticker: Filter by market ticker
+:type ticker: str
+:param min_ts: Filter items after this Unix timestamp
+:type min_ts: int
+:param max_ts: Filter items before this Unix timestamp
+:type max_ts: int
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_trades`
+
+**Signature:**
+```python
+def get_trades(limit: typing.Any = None, cursor: typing.Any = None, ticker: typing.Any = None, min_ts: typing.Any = None, max_ts: typing.Any = None):
+```
+
+**Parameters:**
+
+- `limit` (Optional)
+  - Type: `typing.Any`
+  - Default: `None`
+- `cursor` (Optional)
+  - Type: `typing.Any`
+  - Default: `None`
+- `ticker` (Optional)
+  - Type: `typing.Any`
+  - Default: `None`
+- `min_ts` (Optional)
+  - Type: `typing.Any`
+  - Default: `None`
+- `max_ts` (Optional)
+  - Type: `typing.Any`
+  - Default: `None`
+
+**Description:**
+
+Get Trades
+Endpoint for getting all trades for all markets.  A trade represents a completed transaction between two users on a specific market. Each trade includes the market ticker, price, quantity, and timestamp information.  This endpoint returns a paginated response. Use the 'limit' parameter to control page size (1-1000, defaults to 100). The response includes a 'cursor' field - pass this value in the 'cursor' parameter of your next request to get the next page. An empty cursor indicates no more pages are available.
+:param limit: Number of results per page. Defaults to 100. Maximum value is 1000.
+:type limit: int
+:param cursor: Pagination cursor. Use the cursor value returned from the previous response to get the next page of results. Leave empty for the first page.
+:type cursor: str
+:param ticker: Filter by market ticker
+:type ticker: str
+:param min_ts: Filter items after this Unix timestamp
+:type min_ts: int
+:param max_ts: Filter items before this Unix timestamp
+:type max_ts: int
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_trades_with_http_info`
+
+**Signature:**
+```python
+def get_trades_with_http_info(limit: typing.Annotated[typing.Optional[typing.Annotated[int, FieldInfo(annotation=NoneType, required=True, metadata=[Strict(strict=True), Ge(ge=1), Le(le=1000)])]], FieldInfo(annotation=NoneType, required=True, description='Number of results per page. Defaults to 100. Maximum value is 1000.')] = None, cursor: typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Pagination cursor. Use the cursor value returned from the previous response to get the next page of results. Leave empty for the first page.')] = None, ticker: typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter by market ticker')] = None, min_ts: typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items after this Unix timestamp')] = None, max_ts: typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items before this Unix timestamp')] = None, _request_timeout: typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]] = None, _request_auth: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _content_type: typing.Optional[typing.Annotated[str, Strict(strict=True)]] = None, _headers: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _host_index: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])] = 0):
+```
+
+**Parameters:**
+
+- `limit` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[int, FieldInfo(annotation=NoneType, required=True, metadata=[Strict(strict=True), Ge(ge=1), Le(le=1000)])]], FieldInfo(annotation=NoneType, required=True, description='Number of results per page. Defaults to 100. Maximum value is 1000.')]`
+  - Default: `None`
+- `cursor` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Pagination cursor. Use the cursor value returned from the previous response to get the next page of results. Leave empty for the first page.')]`
+  - Default: `None`
+- `ticker` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter by market ticker')]`
+  - Default: `None`
+- `min_ts` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items after this Unix timestamp')]`
+  - Default: `None`
+- `max_ts` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items before this Unix timestamp')]`
+  - Default: `None`
+- `_request_timeout` (Optional)
+  - Type: `typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]]`
+  - Default: `None`
+- `_request_auth` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_content_type` (Optional)
+  - Type: `typing.Optional[typing.Annotated[str, Strict(strict=True)]]`
+  - Default: `None`
+- `_headers` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_host_index` (Optional)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])]`
+  - Default: `0`
+
+**Description:**
+
+Get Trades
+Endpoint for getting all trades for all markets.  A trade represents a completed transaction between two users on a specific market. Each trade includes the market ticker, price, quantity, and timestamp information.  This endpoint returns a paginated response. Use the 'limit' parameter to control page size (1-1000, defaults to 100). The response includes a 'cursor' field - pass this value in the 'cursor' parameter of your next request to get the next page. An empty cursor indicates no more pages are available.
+:param limit: Number of results per page. Defaults to 100. Maximum value is 1000.
+:type limit: int
+:param cursor: Pagination cursor. Use the cursor value returned from the previous response to get the next page of results. Leave empty for the first page.
+:type cursor: str
+:param ticker: Filter by market ticker
+:type ticker: str
+:param min_ts: Filter items after this Unix timestamp
+:type min_ts: int
+:param max_ts: Filter items before this Unix timestamp
+:type max_ts: int
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_trades_with_http_info`
+
+**Signature:**
+```python
+def get_trades_with_http_info(limit: typing.Annotated[typing.Optional[typing.Annotated[int, FieldInfo(annotation=NoneType, required=True, metadata=[Strict(strict=True), Ge(ge=1), Le(le=1000)])]], FieldInfo(annotation=NoneType, required=True, description='Number of results per page. Defaults to 100. Maximum value is 1000.')] = None, cursor: typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Pagination cursor. Use the cursor value returned from the previous response to get the next page of results. Leave empty for the first page.')] = None, ticker: typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter by market ticker')] = None, min_ts: typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items after this Unix timestamp')] = None, max_ts: typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items before this Unix timestamp')] = None, _request_timeout: typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]] = None, _request_auth: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _content_type: typing.Optional[typing.Annotated[str, Strict(strict=True)]] = None, _headers: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _host_index: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])] = 0):
+```
+
+**Parameters:**
+
+- `limit` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[int, FieldInfo(annotation=NoneType, required=True, metadata=[Strict(strict=True), Ge(ge=1), Le(le=1000)])]], FieldInfo(annotation=NoneType, required=True, description='Number of results per page. Defaults to 100. Maximum value is 1000.')]`
+  - Default: `None`
+- `cursor` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Pagination cursor. Use the cursor value returned from the previous response to get the next page of results. Leave empty for the first page.')]`
+  - Default: `None`
+- `ticker` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter by market ticker')]`
+  - Default: `None`
+- `min_ts` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items after this Unix timestamp')]`
+  - Default: `None`
+- `max_ts` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items before this Unix timestamp')]`
+  - Default: `None`
+- `_request_timeout` (Optional)
+  - Type: `typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]]`
+  - Default: `None`
+- `_request_auth` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_content_type` (Optional)
+  - Type: `typing.Optional[typing.Annotated[str, Strict(strict=True)]]`
+  - Default: `None`
+- `_headers` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_host_index` (Optional)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])]`
+  - Default: `0`
+
+**Description:**
+
+Get Trades
+Endpoint for getting all trades for all markets.  A trade represents a completed transaction between two users on a specific market. Each trade includes the market ticker, price, quantity, and timestamp information.  This endpoint returns a paginated response. Use the 'limit' parameter to control page size (1-1000, defaults to 100). The response includes a 'cursor' field - pass this value in the 'cursor' parameter of your next request to get the next page. An empty cursor indicates no more pages are available.
+:param limit: Number of results per page. Defaults to 100. Maximum value is 1000.
+:type limit: int
+:param cursor: Pagination cursor. Use the cursor value returned from the previous response to get the next page of results. Leave empty for the first page.
+:type cursor: str
+:param ticker: Filter by market ticker
+:type ticker: str
+:param min_ts: Filter items after this Unix timestamp
+:type min_ts: int
+:param max_ts: Filter items before this Unix timestamp
+:type max_ts: int
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_trades_without_preload_content`
+
+**Signature:**
+```python
+def get_trades_without_preload_content(limit: typing.Annotated[typing.Optional[typing.Annotated[int, FieldInfo(annotation=NoneType, required=True, metadata=[Strict(strict=True), Ge(ge=1), Le(le=1000)])]], FieldInfo(annotation=NoneType, required=True, description='Number of results per page. Defaults to 100. Maximum value is 1000.')] = None, cursor: typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Pagination cursor. Use the cursor value returned from the previous response to get the next page of results. Leave empty for the first page.')] = None, ticker: typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter by market ticker')] = None, min_ts: typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items after this Unix timestamp')] = None, max_ts: typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items before this Unix timestamp')] = None, _request_timeout: typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]] = None, _request_auth: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _content_type: typing.Optional[typing.Annotated[str, Strict(strict=True)]] = None, _headers: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _host_index: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])] = 0):
+```
+
+**Parameters:**
+
+- `limit` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[int, FieldInfo(annotation=NoneType, required=True, metadata=[Strict(strict=True), Ge(ge=1), Le(le=1000)])]], FieldInfo(annotation=NoneType, required=True, description='Number of results per page. Defaults to 100. Maximum value is 1000.')]`
+  - Default: `None`
+- `cursor` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Pagination cursor. Use the cursor value returned from the previous response to get the next page of results. Leave empty for the first page.')]`
+  - Default: `None`
+- `ticker` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter by market ticker')]`
+  - Default: `None`
+- `min_ts` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items after this Unix timestamp')]`
+  - Default: `None`
+- `max_ts` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items before this Unix timestamp')]`
+  - Default: `None`
+- `_request_timeout` (Optional)
+  - Type: `typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]]`
+  - Default: `None`
+- `_request_auth` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_content_type` (Optional)
+  - Type: `typing.Optional[typing.Annotated[str, Strict(strict=True)]]`
+  - Default: `None`
+- `_headers` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_host_index` (Optional)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])]`
+  - Default: `0`
+
+**Description:**
+
+Get Trades
+Endpoint for getting all trades for all markets.  A trade represents a completed transaction between two users on a specific market. Each trade includes the market ticker, price, quantity, and timestamp information.  This endpoint returns a paginated response. Use the 'limit' parameter to control page size (1-1000, defaults to 100). The response includes a 'cursor' field - pass this value in the 'cursor' parameter of your next request to get the next page. An empty cursor indicates no more pages are available.
+:param limit: Number of results per page. Defaults to 100. Maximum value is 1000.
+:type limit: int
+:param cursor: Pagination cursor. Use the cursor value returned from the previous response to get the next page of results. Leave empty for the first page.
+:type cursor: str
+:param ticker: Filter by market ticker
+:type ticker: str
+:param min_ts: Filter items after this Unix timestamp
+:type min_ts: int
+:param max_ts: Filter items before this Unix timestamp
+:type max_ts: int
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_trades_without_preload_content`
+
+**Signature:**
+```python
+def get_trades_without_preload_content(limit: typing.Annotated[typing.Optional[typing.Annotated[int, FieldInfo(annotation=NoneType, required=True, metadata=[Strict(strict=True), Ge(ge=1), Le(le=1000)])]], FieldInfo(annotation=NoneType, required=True, description='Number of results per page. Defaults to 100. Maximum value is 1000.')] = None, cursor: typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Pagination cursor. Use the cursor value returned from the previous response to get the next page of results. Leave empty for the first page.')] = None, ticker: typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter by market ticker')] = None, min_ts: typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items after this Unix timestamp')] = None, max_ts: typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items before this Unix timestamp')] = None, _request_timeout: typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]] = None, _request_auth: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _content_type: typing.Optional[typing.Annotated[str, Strict(strict=True)]] = None, _headers: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _host_index: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])] = 0):
+```
+
+**Parameters:**
+
+- `limit` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[int, FieldInfo(annotation=NoneType, required=True, metadata=[Strict(strict=True), Ge(ge=1), Le(le=1000)])]], FieldInfo(annotation=NoneType, required=True, description='Number of results per page. Defaults to 100. Maximum value is 1000.')]`
+  - Default: `None`
+- `cursor` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Pagination cursor. Use the cursor value returned from the previous response to get the next page of results. Leave empty for the first page.')]`
+  - Default: `None`
+- `ticker` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter by market ticker')]`
+  - Default: `None`
+- `min_ts` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items after this Unix timestamp')]`
+  - Default: `None`
+- `max_ts` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items before this Unix timestamp')]`
+  - Default: `None`
+- `_request_timeout` (Optional)
+  - Type: `typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]]`
+  - Default: `None`
+- `_request_auth` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_content_type` (Optional)
+  - Type: `typing.Optional[typing.Annotated[str, Strict(strict=True)]]`
+  - Default: `None`
+- `_headers` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_host_index` (Optional)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])]`
+  - Default: `0`
+
+**Description:**
+
+Get Trades
+Endpoint for getting all trades for all markets.  A trade represents a completed transaction between two users on a specific market. Each trade includes the market ticker, price, quantity, and timestamp information.  This endpoint returns a paginated response. Use the 'limit' parameter to control page size (1-1000, defaults to 100). The response includes a 'cursor' field - pass this value in the 'cursor' parameter of your next request to get the next page. An empty cursor indicates no more pages are available.
+:param limit: Number of results per page. Defaults to 100. Maximum value is 1000.
+:type limit: int
+:param cursor: Pagination cursor. Use the cursor value returned from the previous response to get the next page of results. Leave empty for the first page.
+:type cursor: str
+:param ticker: Filter by market ticker
+:type ticker: str
+:param min_ts: Filter items after this Unix timestamp
+:type min_ts: int
+:param max_ts: Filter items before this Unix timestamp
+:type max_ts: int
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+
+================================================================================
+## PortfolioApi
+================================================================================
+
+NOTE: This class is auto generated by OpenAPI Generator
+    Ref: https://openapi-generator.tech
+
+    Do not edit the class manually.
+
+### Initialization Parameters
+
+```python
+PortfolioApi(
+    api_client = None,
+)
+```
+
+### General
+
+#### `get_fills`
+
+**Signature:**
+```python
+def get_fills(ticker: typing.Any = None, order_id: typing.Any = None, min_ts: typing.Any = None, max_ts: typing.Any = None, limit: typing.Any = None, cursor: typing.Any = None):
+```
+
+**Parameters:**
+
+- `ticker` (Optional)
+  - Type: `typing.Any`
+  - Default: `None`
+- `order_id` (Optional)
+  - Type: `typing.Any`
+  - Default: `None`
+- `min_ts` (Optional)
+  - Type: `typing.Any`
+  - Default: `None`
+- `max_ts` (Optional)
+  - Type: `typing.Any`
+  - Default: `None`
+- `limit` (Optional)
+  - Type: `typing.Any`
+  - Default: `None`
+- `cursor` (Optional)
+  - Type: `typing.Any`
+  - Default: `None`
+
+**Description:**
+
+Get Fills
+Endpoint for getting all fills for the member. A fill is when a trade you have is matched.
+:param ticker: Filter by market ticker
+:type ticker: str
+:param order_id: Filter by order ID
+:type order_id: str
+:param min_ts: Filter items after this Unix timestamp
+:type min_ts: int
+:param max_ts: Filter items before this Unix timestamp
+:type max_ts: int
+:param limit: Number of results per page. Defaults to 100. Maximum value is 200.
+:type limit: int
+:param cursor: Pagination cursor. Use the cursor value returned from the previous response to get the next page of results. Leave empty for the first page.
+:type cursor: str
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_fills`
+
+**Signature:**
+```python
+def get_fills(ticker: typing.Any = None, order_id: typing.Any = None, min_ts: typing.Any = None, max_ts: typing.Any = None, limit: typing.Any = None, cursor: typing.Any = None):
+```
+
+**Parameters:**
+
+- `ticker` (Optional)
+  - Type: `typing.Any`
+  - Default: `None`
+- `order_id` (Optional)
+  - Type: `typing.Any`
+  - Default: `None`
+- `min_ts` (Optional)
+  - Type: `typing.Any`
+  - Default: `None`
+- `max_ts` (Optional)
+  - Type: `typing.Any`
+  - Default: `None`
+- `limit` (Optional)
+  - Type: `typing.Any`
+  - Default: `None`
+- `cursor` (Optional)
+  - Type: `typing.Any`
+  - Default: `None`
+
+**Description:**
+
+Get Fills
+Endpoint for getting all fills for the member. A fill is when a trade you have is matched.
+:param ticker: Filter by market ticker
+:type ticker: str
+:param order_id: Filter by order ID
+:type order_id: str
+:param min_ts: Filter items after this Unix timestamp
+:type min_ts: int
+:param max_ts: Filter items before this Unix timestamp
+:type max_ts: int
+:param limit: Number of results per page. Defaults to 100. Maximum value is 200.
+:type limit: int
+:param cursor: Pagination cursor. Use the cursor value returned from the previous response to get the next page of results. Leave empty for the first page.
+:type cursor: str
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_fills_with_http_info`
+
+**Signature:**
+```python
+def get_fills_with_http_info(ticker: typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter by market ticker')] = None, order_id: typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter by order ID')] = None, min_ts: typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items after this Unix timestamp')] = None, max_ts: typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items before this Unix timestamp')] = None, limit: typing.Annotated[typing.Optional[typing.Annotated[int, FieldInfo(annotation=NoneType, required=True, metadata=[Strict(strict=True), Ge(ge=1), Le(le=200)])]], FieldInfo(annotation=NoneType, required=True, description='Number of results per page. Defaults to 100. Maximum value is 200.')] = None, cursor: typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Pagination cursor. Use the cursor value returned from the previous response to get the next page of results. Leave empty for the first page.')] = None, _request_timeout: typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]] = None, _request_auth: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _content_type: typing.Optional[typing.Annotated[str, Strict(strict=True)]] = None, _headers: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _host_index: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])] = 0):
+```
+
+**Parameters:**
+
+- `ticker` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter by market ticker')]`
+  - Default: `None`
+- `order_id` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter by order ID')]`
+  - Default: `None`
+- `min_ts` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items after this Unix timestamp')]`
+  - Default: `None`
+- `max_ts` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items before this Unix timestamp')]`
+  - Default: `None`
+- `limit` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[int, FieldInfo(annotation=NoneType, required=True, metadata=[Strict(strict=True), Ge(ge=1), Le(le=200)])]], FieldInfo(annotation=NoneType, required=True, description='Number of results per page. Defaults to 100. Maximum value is 200.')]`
+  - Default: `None`
+- `cursor` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Pagination cursor. Use the cursor value returned from the previous response to get the next page of results. Leave empty for the first page.')]`
+  - Default: `None`
+- `_request_timeout` (Optional)
+  - Type: `typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]]`
+  - Default: `None`
+- `_request_auth` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_content_type` (Optional)
+  - Type: `typing.Optional[typing.Annotated[str, Strict(strict=True)]]`
+  - Default: `None`
+- `_headers` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_host_index` (Optional)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])]`
+  - Default: `0`
+
+**Description:**
+
+Get Fills
+Endpoint for getting all fills for the member. A fill is when a trade you have is matched.
+:param ticker: Filter by market ticker
+:type ticker: str
+:param order_id: Filter by order ID
+:type order_id: str
+:param min_ts: Filter items after this Unix timestamp
+:type min_ts: int
+:param max_ts: Filter items before this Unix timestamp
+:type max_ts: int
+:param limit: Number of results per page. Defaults to 100. Maximum value is 200.
+:type limit: int
+:param cursor: Pagination cursor. Use the cursor value returned from the previous response to get the next page of results. Leave empty for the first page.
+:type cursor: str
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_fills_with_http_info`
+
+**Signature:**
+```python
+def get_fills_with_http_info(ticker: typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter by market ticker')] = None, order_id: typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter by order ID')] = None, min_ts: typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items after this Unix timestamp')] = None, max_ts: typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items before this Unix timestamp')] = None, limit: typing.Annotated[typing.Optional[typing.Annotated[int, FieldInfo(annotation=NoneType, required=True, metadata=[Strict(strict=True), Ge(ge=1), Le(le=200)])]], FieldInfo(annotation=NoneType, required=True, description='Number of results per page. Defaults to 100. Maximum value is 200.')] = None, cursor: typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Pagination cursor. Use the cursor value returned from the previous response to get the next page of results. Leave empty for the first page.')] = None, _request_timeout: typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]] = None, _request_auth: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _content_type: typing.Optional[typing.Annotated[str, Strict(strict=True)]] = None, _headers: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _host_index: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])] = 0):
+```
+
+**Parameters:**
+
+- `ticker` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter by market ticker')]`
+  - Default: `None`
+- `order_id` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter by order ID')]`
+  - Default: `None`
+- `min_ts` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items after this Unix timestamp')]`
+  - Default: `None`
+- `max_ts` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items before this Unix timestamp')]`
+  - Default: `None`
+- `limit` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[int, FieldInfo(annotation=NoneType, required=True, metadata=[Strict(strict=True), Ge(ge=1), Le(le=200)])]], FieldInfo(annotation=NoneType, required=True, description='Number of results per page. Defaults to 100. Maximum value is 200.')]`
+  - Default: `None`
+- `cursor` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Pagination cursor. Use the cursor value returned from the previous response to get the next page of results. Leave empty for the first page.')]`
+  - Default: `None`
+- `_request_timeout` (Optional)
+  - Type: `typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]]`
+  - Default: `None`
+- `_request_auth` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_content_type` (Optional)
+  - Type: `typing.Optional[typing.Annotated[str, Strict(strict=True)]]`
+  - Default: `None`
+- `_headers` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_host_index` (Optional)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])]`
+  - Default: `0`
+
+**Description:**
+
+Get Fills
+Endpoint for getting all fills for the member. A fill is when a trade you have is matched.
+:param ticker: Filter by market ticker
+:type ticker: str
+:param order_id: Filter by order ID
+:type order_id: str
+:param min_ts: Filter items after this Unix timestamp
+:type min_ts: int
+:param max_ts: Filter items before this Unix timestamp
+:type max_ts: int
+:param limit: Number of results per page. Defaults to 100. Maximum value is 200.
+:type limit: int
+:param cursor: Pagination cursor. Use the cursor value returned from the previous response to get the next page of results. Leave empty for the first page.
+:type cursor: str
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_fills_without_preload_content`
+
+**Signature:**
+```python
+def get_fills_without_preload_content(ticker: typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter by market ticker')] = None, order_id: typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter by order ID')] = None, min_ts: typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items after this Unix timestamp')] = None, max_ts: typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items before this Unix timestamp')] = None, limit: typing.Annotated[typing.Optional[typing.Annotated[int, FieldInfo(annotation=NoneType, required=True, metadata=[Strict(strict=True), Ge(ge=1), Le(le=200)])]], FieldInfo(annotation=NoneType, required=True, description='Number of results per page. Defaults to 100. Maximum value is 200.')] = None, cursor: typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Pagination cursor. Use the cursor value returned from the previous response to get the next page of results. Leave empty for the first page.')] = None, _request_timeout: typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]] = None, _request_auth: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _content_type: typing.Optional[typing.Annotated[str, Strict(strict=True)]] = None, _headers: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _host_index: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])] = 0):
+```
+
+**Parameters:**
+
+- `ticker` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter by market ticker')]`
+  - Default: `None`
+- `order_id` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter by order ID')]`
+  - Default: `None`
+- `min_ts` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items after this Unix timestamp')]`
+  - Default: `None`
+- `max_ts` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items before this Unix timestamp')]`
+  - Default: `None`
+- `limit` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[int, FieldInfo(annotation=NoneType, required=True, metadata=[Strict(strict=True), Ge(ge=1), Le(le=200)])]], FieldInfo(annotation=NoneType, required=True, description='Number of results per page. Defaults to 100. Maximum value is 200.')]`
+  - Default: `None`
+- `cursor` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Pagination cursor. Use the cursor value returned from the previous response to get the next page of results. Leave empty for the first page.')]`
+  - Default: `None`
+- `_request_timeout` (Optional)
+  - Type: `typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]]`
+  - Default: `None`
+- `_request_auth` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_content_type` (Optional)
+  - Type: `typing.Optional[typing.Annotated[str, Strict(strict=True)]]`
+  - Default: `None`
+- `_headers` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_host_index` (Optional)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])]`
+  - Default: `0`
+
+**Description:**
+
+Get Fills
+Endpoint for getting all fills for the member. A fill is when a trade you have is matched.
+:param ticker: Filter by market ticker
+:type ticker: str
+:param order_id: Filter by order ID
+:type order_id: str
+:param min_ts: Filter items after this Unix timestamp
+:type min_ts: int
+:param max_ts: Filter items before this Unix timestamp
+:type max_ts: int
+:param limit: Number of results per page. Defaults to 100. Maximum value is 200.
+:type limit: int
+:param cursor: Pagination cursor. Use the cursor value returned from the previous response to get the next page of results. Leave empty for the first page.
+:type cursor: str
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_fills_without_preload_content`
+
+**Signature:**
+```python
+def get_fills_without_preload_content(ticker: typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter by market ticker')] = None, order_id: typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter by order ID')] = None, min_ts: typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items after this Unix timestamp')] = None, max_ts: typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items before this Unix timestamp')] = None, limit: typing.Annotated[typing.Optional[typing.Annotated[int, FieldInfo(annotation=NoneType, required=True, metadata=[Strict(strict=True), Ge(ge=1), Le(le=200)])]], FieldInfo(annotation=NoneType, required=True, description='Number of results per page. Defaults to 100. Maximum value is 200.')] = None, cursor: typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Pagination cursor. Use the cursor value returned from the previous response to get the next page of results. Leave empty for the first page.')] = None, _request_timeout: typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]] = None, _request_auth: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _content_type: typing.Optional[typing.Annotated[str, Strict(strict=True)]] = None, _headers: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _host_index: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])] = 0):
+```
+
+**Parameters:**
+
+- `ticker` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter by market ticker')]`
+  - Default: `None`
+- `order_id` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter by order ID')]`
+  - Default: `None`
+- `min_ts` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items after this Unix timestamp')]`
+  - Default: `None`
+- `max_ts` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items before this Unix timestamp')]`
+  - Default: `None`
+- `limit` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[int, FieldInfo(annotation=NoneType, required=True, metadata=[Strict(strict=True), Ge(ge=1), Le(le=200)])]], FieldInfo(annotation=NoneType, required=True, description='Number of results per page. Defaults to 100. Maximum value is 200.')]`
+  - Default: `None`
+- `cursor` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Pagination cursor. Use the cursor value returned from the previous response to get the next page of results. Leave empty for the first page.')]`
+  - Default: `None`
+- `_request_timeout` (Optional)
+  - Type: `typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]]`
+  - Default: `None`
+- `_request_auth` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_content_type` (Optional)
+  - Type: `typing.Optional[typing.Annotated[str, Strict(strict=True)]]`
+  - Default: `None`
+- `_headers` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_host_index` (Optional)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])]`
+  - Default: `0`
+
+**Description:**
+
+Get Fills
+Endpoint for getting all fills for the member. A fill is when a trade you have is matched.
+:param ticker: Filter by market ticker
+:type ticker: str
+:param order_id: Filter by order ID
+:type order_id: str
+:param min_ts: Filter items after this Unix timestamp
+:type min_ts: int
+:param max_ts: Filter items before this Unix timestamp
+:type max_ts: int
+:param limit: Number of results per page. Defaults to 100. Maximum value is 200.
+:type limit: int
+:param cursor: Pagination cursor. Use the cursor value returned from the previous response to get the next page of results. Leave empty for the first page.
+:type cursor: str
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_settlements`
+
+**Signature:**
+```python
+def get_settlements(limit: typing.Any = None, cursor: typing.Any = None, ticker: typing.Any = None, event_ticker: typing.Any = None, min_ts: typing.Any = None, max_ts: typing.Any = None):
+```
+
+**Parameters:**
+
+- `limit` (Optional)
+  - Type: `typing.Any`
+  - Default: `None`
+- `cursor` (Optional)
+  - Type: `typing.Any`
+  - Default: `None`
+- `ticker` (Optional)
+  - Type: `typing.Any`
+  - Default: `None`
+- `event_ticker` (Optional)
+  - Type: `typing.Any`
+  - Default: `None`
+- `min_ts` (Optional)
+  - Type: `typing.Any`
+  - Default: `None`
+- `max_ts` (Optional)
+  - Type: `typing.Any`
+  - Default: `None`
+
+**Description:**
+
+Get Settlements
+Endpoint for getting the member's settlements historical track.
+:param limit: Number of results per page. Defaults to 100. Maximum value is 200.
+:type limit: int
+:param cursor: Pagination cursor. Use the cursor value returned from the previous response to get the next page of results. Leave empty for the first page.
+:type cursor: str
+:param ticker: Filter by market ticker
+:type ticker: str
+:param event_ticker: Event ticker of desired positions. Multiple event tickers can be provided as a comma-separated list (maximum 10).
+:type event_ticker: str
+:param min_ts: Filter items after this Unix timestamp
+:type min_ts: int
+:param max_ts: Filter items before this Unix timestamp
+:type max_ts: int
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_settlements`
+
+**Signature:**
+```python
+def get_settlements(limit: typing.Any = None, cursor: typing.Any = None, ticker: typing.Any = None, event_ticker: typing.Any = None, min_ts: typing.Any = None, max_ts: typing.Any = None):
+```
+
+**Parameters:**
+
+- `limit` (Optional)
+  - Type: `typing.Any`
+  - Default: `None`
+- `cursor` (Optional)
+  - Type: `typing.Any`
+  - Default: `None`
+- `ticker` (Optional)
+  - Type: `typing.Any`
+  - Default: `None`
+- `event_ticker` (Optional)
+  - Type: `typing.Any`
+  - Default: `None`
+- `min_ts` (Optional)
+  - Type: `typing.Any`
+  - Default: `None`
+- `max_ts` (Optional)
+  - Type: `typing.Any`
+  - Default: `None`
+
+**Description:**
+
+Get Settlements
+Endpoint for getting the member's settlements historical track.
+:param limit: Number of results per page. Defaults to 100. Maximum value is 200.
+:type limit: int
+:param cursor: Pagination cursor. Use the cursor value returned from the previous response to get the next page of results. Leave empty for the first page.
+:type cursor: str
+:param ticker: Filter by market ticker
+:type ticker: str
+:param event_ticker: Event ticker of desired positions. Multiple event tickers can be provided as a comma-separated list (maximum 10).
+:type event_ticker: str
+:param min_ts: Filter items after this Unix timestamp
+:type min_ts: int
+:param max_ts: Filter items before this Unix timestamp
+:type max_ts: int
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_settlements_with_http_info`
+
+**Signature:**
+```python
+def get_settlements_with_http_info(limit: typing.Annotated[typing.Optional[typing.Annotated[int, FieldInfo(annotation=NoneType, required=True, metadata=[Strict(strict=True), Ge(ge=1), Le(le=200)])]], FieldInfo(annotation=NoneType, required=True, description='Number of results per page. Defaults to 100. Maximum value is 200.')] = None, cursor: typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Pagination cursor. Use the cursor value returned from the previous response to get the next page of results. Leave empty for the first page.')] = None, ticker: typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter by market ticker')] = None, event_ticker: typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Event ticker of desired positions. Multiple event tickers can be provided as a comma-separated list (maximum 10).')] = None, min_ts: typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items after this Unix timestamp')] = None, max_ts: typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items before this Unix timestamp')] = None, _request_timeout: typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]] = None, _request_auth: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _content_type: typing.Optional[typing.Annotated[str, Strict(strict=True)]] = None, _headers: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _host_index: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])] = 0):
+```
+
+**Parameters:**
+
+- `limit` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[int, FieldInfo(annotation=NoneType, required=True, metadata=[Strict(strict=True), Ge(ge=1), Le(le=200)])]], FieldInfo(annotation=NoneType, required=True, description='Number of results per page. Defaults to 100. Maximum value is 200.')]`
+  - Default: `None`
+- `cursor` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Pagination cursor. Use the cursor value returned from the previous response to get the next page of results. Leave empty for the first page.')]`
+  - Default: `None`
+- `ticker` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter by market ticker')]`
+  - Default: `None`
+- `event_ticker` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Event ticker of desired positions. Multiple event tickers can be provided as a comma-separated list (maximum 10).')]`
+  - Default: `None`
+- `min_ts` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items after this Unix timestamp')]`
+  - Default: `None`
+- `max_ts` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items before this Unix timestamp')]`
+  - Default: `None`
+- `_request_timeout` (Optional)
+  - Type: `typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]]`
+  - Default: `None`
+- `_request_auth` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_content_type` (Optional)
+  - Type: `typing.Optional[typing.Annotated[str, Strict(strict=True)]]`
+  - Default: `None`
+- `_headers` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_host_index` (Optional)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])]`
+  - Default: `0`
+
+**Description:**
+
+Get Settlements
+Endpoint for getting the member's settlements historical track.
+:param limit: Number of results per page. Defaults to 100. Maximum value is 200.
+:type limit: int
+:param cursor: Pagination cursor. Use the cursor value returned from the previous response to get the next page of results. Leave empty for the first page.
+:type cursor: str
+:param ticker: Filter by market ticker
+:type ticker: str
+:param event_ticker: Event ticker of desired positions. Multiple event tickers can be provided as a comma-separated list (maximum 10).
+:type event_ticker: str
+:param min_ts: Filter items after this Unix timestamp
+:type min_ts: int
+:param max_ts: Filter items before this Unix timestamp
+:type max_ts: int
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_settlements_with_http_info`
+
+**Signature:**
+```python
+def get_settlements_with_http_info(limit: typing.Annotated[typing.Optional[typing.Annotated[int, FieldInfo(annotation=NoneType, required=True, metadata=[Strict(strict=True), Ge(ge=1), Le(le=200)])]], FieldInfo(annotation=NoneType, required=True, description='Number of results per page. Defaults to 100. Maximum value is 200.')] = None, cursor: typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Pagination cursor. Use the cursor value returned from the previous response to get the next page of results. Leave empty for the first page.')] = None, ticker: typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter by market ticker')] = None, event_ticker: typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Event ticker of desired positions. Multiple event tickers can be provided as a comma-separated list (maximum 10).')] = None, min_ts: typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items after this Unix timestamp')] = None, max_ts: typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items before this Unix timestamp')] = None, _request_timeout: typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]] = None, _request_auth: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _content_type: typing.Optional[typing.Annotated[str, Strict(strict=True)]] = None, _headers: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _host_index: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])] = 0):
+```
+
+**Parameters:**
+
+- `limit` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[int, FieldInfo(annotation=NoneType, required=True, metadata=[Strict(strict=True), Ge(ge=1), Le(le=200)])]], FieldInfo(annotation=NoneType, required=True, description='Number of results per page. Defaults to 100. Maximum value is 200.')]`
+  - Default: `None`
+- `cursor` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Pagination cursor. Use the cursor value returned from the previous response to get the next page of results. Leave empty for the first page.')]`
+  - Default: `None`
+- `ticker` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter by market ticker')]`
+  - Default: `None`
+- `event_ticker` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Event ticker of desired positions. Multiple event tickers can be provided as a comma-separated list (maximum 10).')]`
+  - Default: `None`
+- `min_ts` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items after this Unix timestamp')]`
+  - Default: `None`
+- `max_ts` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items before this Unix timestamp')]`
+  - Default: `None`
+- `_request_timeout` (Optional)
+  - Type: `typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]]`
+  - Default: `None`
+- `_request_auth` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_content_type` (Optional)
+  - Type: `typing.Optional[typing.Annotated[str, Strict(strict=True)]]`
+  - Default: `None`
+- `_headers` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_host_index` (Optional)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])]`
+  - Default: `0`
+
+**Description:**
+
+Get Settlements
+Endpoint for getting the member's settlements historical track.
+:param limit: Number of results per page. Defaults to 100. Maximum value is 200.
+:type limit: int
+:param cursor: Pagination cursor. Use the cursor value returned from the previous response to get the next page of results. Leave empty for the first page.
+:type cursor: str
+:param ticker: Filter by market ticker
+:type ticker: str
+:param event_ticker: Event ticker of desired positions. Multiple event tickers can be provided as a comma-separated list (maximum 10).
+:type event_ticker: str
+:param min_ts: Filter items after this Unix timestamp
+:type min_ts: int
+:param max_ts: Filter items before this Unix timestamp
+:type max_ts: int
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_settlements_without_preload_content`
+
+**Signature:**
+```python
+def get_settlements_without_preload_content(limit: typing.Annotated[typing.Optional[typing.Annotated[int, FieldInfo(annotation=NoneType, required=True, metadata=[Strict(strict=True), Ge(ge=1), Le(le=200)])]], FieldInfo(annotation=NoneType, required=True, description='Number of results per page. Defaults to 100. Maximum value is 200.')] = None, cursor: typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Pagination cursor. Use the cursor value returned from the previous response to get the next page of results. Leave empty for the first page.')] = None, ticker: typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter by market ticker')] = None, event_ticker: typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Event ticker of desired positions. Multiple event tickers can be provided as a comma-separated list (maximum 10).')] = None, min_ts: typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items after this Unix timestamp')] = None, max_ts: typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items before this Unix timestamp')] = None, _request_timeout: typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]] = None, _request_auth: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _content_type: typing.Optional[typing.Annotated[str, Strict(strict=True)]] = None, _headers: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _host_index: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])] = 0):
+```
+
+**Parameters:**
+
+- `limit` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[int, FieldInfo(annotation=NoneType, required=True, metadata=[Strict(strict=True), Ge(ge=1), Le(le=200)])]], FieldInfo(annotation=NoneType, required=True, description='Number of results per page. Defaults to 100. Maximum value is 200.')]`
+  - Default: `None`
+- `cursor` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Pagination cursor. Use the cursor value returned from the previous response to get the next page of results. Leave empty for the first page.')]`
+  - Default: `None`
+- `ticker` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter by market ticker')]`
+  - Default: `None`
+- `event_ticker` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Event ticker of desired positions. Multiple event tickers can be provided as a comma-separated list (maximum 10).')]`
+  - Default: `None`
+- `min_ts` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items after this Unix timestamp')]`
+  - Default: `None`
+- `max_ts` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items before this Unix timestamp')]`
+  - Default: `None`
+- `_request_timeout` (Optional)
+  - Type: `typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]]`
+  - Default: `None`
+- `_request_auth` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_content_type` (Optional)
+  - Type: `typing.Optional[typing.Annotated[str, Strict(strict=True)]]`
+  - Default: `None`
+- `_headers` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_host_index` (Optional)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])]`
+  - Default: `0`
+
+**Description:**
+
+Get Settlements
+Endpoint for getting the member's settlements historical track.
+:param limit: Number of results per page. Defaults to 100. Maximum value is 200.
+:type limit: int
+:param cursor: Pagination cursor. Use the cursor value returned from the previous response to get the next page of results. Leave empty for the first page.
+:type cursor: str
+:param ticker: Filter by market ticker
+:type ticker: str
+:param event_ticker: Event ticker of desired positions. Multiple event tickers can be provided as a comma-separated list (maximum 10).
+:type event_ticker: str
+:param min_ts: Filter items after this Unix timestamp
+:type min_ts: int
+:param max_ts: Filter items before this Unix timestamp
+:type max_ts: int
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_settlements_without_preload_content`
+
+**Signature:**
+```python
+def get_settlements_without_preload_content(limit: typing.Annotated[typing.Optional[typing.Annotated[int, FieldInfo(annotation=NoneType, required=True, metadata=[Strict(strict=True), Ge(ge=1), Le(le=200)])]], FieldInfo(annotation=NoneType, required=True, description='Number of results per page. Defaults to 100. Maximum value is 200.')] = None, cursor: typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Pagination cursor. Use the cursor value returned from the previous response to get the next page of results. Leave empty for the first page.')] = None, ticker: typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter by market ticker')] = None, event_ticker: typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Event ticker of desired positions. Multiple event tickers can be provided as a comma-separated list (maximum 10).')] = None, min_ts: typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items after this Unix timestamp')] = None, max_ts: typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items before this Unix timestamp')] = None, _request_timeout: typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]] = None, _request_auth: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _content_type: typing.Optional[typing.Annotated[str, Strict(strict=True)]] = None, _headers: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _host_index: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])] = 0):
+```
+
+**Parameters:**
+
+- `limit` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[int, FieldInfo(annotation=NoneType, required=True, metadata=[Strict(strict=True), Ge(ge=1), Le(le=200)])]], FieldInfo(annotation=NoneType, required=True, description='Number of results per page. Defaults to 100. Maximum value is 200.')]`
+  - Default: `None`
+- `cursor` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Pagination cursor. Use the cursor value returned from the previous response to get the next page of results. Leave empty for the first page.')]`
+  - Default: `None`
+- `ticker` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter by market ticker')]`
+  - Default: `None`
+- `event_ticker` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Event ticker of desired positions. Multiple event tickers can be provided as a comma-separated list (maximum 10).')]`
+  - Default: `None`
+- `min_ts` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items after this Unix timestamp')]`
+  - Default: `None`
+- `max_ts` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[int, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter items before this Unix timestamp')]`
+  - Default: `None`
+- `_request_timeout` (Optional)
+  - Type: `typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]]`
+  - Default: `None`
+- `_request_auth` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_content_type` (Optional)
+  - Type: `typing.Optional[typing.Annotated[str, Strict(strict=True)]]`
+  - Default: `None`
+- `_headers` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_host_index` (Optional)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])]`
+  - Default: `0`
+
+**Description:**
+
+Get Settlements
+Endpoint for getting the member's settlements historical track.
+:param limit: Number of results per page. Defaults to 100. Maximum value is 200.
+:type limit: int
+:param cursor: Pagination cursor. Use the cursor value returned from the previous response to get the next page of results. Leave empty for the first page.
+:type cursor: str
+:param ticker: Filter by market ticker
+:type ticker: str
+:param event_ticker: Event ticker of desired positions. Multiple event tickers can be provided as a comma-separated list (maximum 10).
+:type event_ticker: str
+:param min_ts: Filter items after this Unix timestamp
+:type min_ts: int
+:param max_ts: Filter items before this Unix timestamp
+:type max_ts: int
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+### Orders
+
+#### `get_portfolio_resting_order_total_value`
+
+**Signature:**
+```python
+def get_portfolio_resting_order_total_value():
+```
+
+**Description:**
+
+Get Total Resting Order Value
+Endpoint for getting the total value, in cents, of resting orders. This endpoint is only intended for use by FCM members (rare). Note: If you're uncertain about this endpoint, it likely does not apply to you.
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_portfolio_resting_order_total_value`
+
+**Signature:**
+```python
+def get_portfolio_resting_order_total_value():
+```
+
+**Description:**
+
+Get Total Resting Order Value
+Endpoint for getting the total value, in cents, of resting orders. This endpoint is only intended for use by FCM members (rare). Note: If you're uncertain about this endpoint, it likely does not apply to you.
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_portfolio_resting_order_total_value_with_http_info`
+
+**Signature:**
+```python
+def get_portfolio_resting_order_total_value_with_http_info(_request_timeout: typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]] = None, _request_auth: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _content_type: typing.Optional[typing.Annotated[str, Strict(strict=True)]] = None, _headers: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _host_index: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])] = 0):
+```
+
+**Parameters:**
+
+- `_request_timeout` (Optional)
+  - Type: `typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]]`
+  - Default: `None`
+- `_request_auth` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_content_type` (Optional)
+  - Type: `typing.Optional[typing.Annotated[str, Strict(strict=True)]]`
+  - Default: `None`
+- `_headers` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_host_index` (Optional)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])]`
+  - Default: `0`
+
+**Description:**
+
+Get Total Resting Order Value
+Endpoint for getting the total value, in cents, of resting orders. This endpoint is only intended for use by FCM members (rare). Note: If you're uncertain about this endpoint, it likely does not apply to you.
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_portfolio_resting_order_total_value_with_http_info`
+
+**Signature:**
+```python
+def get_portfolio_resting_order_total_value_with_http_info(_request_timeout: typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]] = None, _request_auth: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _content_type: typing.Optional[typing.Annotated[str, Strict(strict=True)]] = None, _headers: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _host_index: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])] = 0):
+```
+
+**Parameters:**
+
+- `_request_timeout` (Optional)
+  - Type: `typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]]`
+  - Default: `None`
+- `_request_auth` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_content_type` (Optional)
+  - Type: `typing.Optional[typing.Annotated[str, Strict(strict=True)]]`
+  - Default: `None`
+- `_headers` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_host_index` (Optional)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])]`
+  - Default: `0`
+
+**Description:**
+
+Get Total Resting Order Value
+Endpoint for getting the total value, in cents, of resting orders. This endpoint is only intended for use by FCM members (rare). Note: If you're uncertain about this endpoint, it likely does not apply to you.
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_portfolio_resting_order_total_value_without_preload_content`
+
+**Signature:**
+```python
+def get_portfolio_resting_order_total_value_without_preload_content(_request_timeout: typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]] = None, _request_auth: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _content_type: typing.Optional[typing.Annotated[str, Strict(strict=True)]] = None, _headers: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _host_index: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])] = 0):
+```
+
+**Parameters:**
+
+- `_request_timeout` (Optional)
+  - Type: `typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]]`
+  - Default: `None`
+- `_request_auth` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_content_type` (Optional)
+  - Type: `typing.Optional[typing.Annotated[str, Strict(strict=True)]]`
+  - Default: `None`
+- `_headers` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_host_index` (Optional)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])]`
+  - Default: `0`
+
+**Description:**
+
+Get Total Resting Order Value
+Endpoint for getting the total value, in cents, of resting orders. This endpoint is only intended for use by FCM members (rare). Note: If you're uncertain about this endpoint, it likely does not apply to you.
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_portfolio_resting_order_total_value_without_preload_content`
+
+**Signature:**
+```python
+def get_portfolio_resting_order_total_value_without_preload_content(_request_timeout: typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]] = None, _request_auth: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _content_type: typing.Optional[typing.Annotated[str, Strict(strict=True)]] = None, _headers: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _host_index: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])] = 0):
+```
+
+**Parameters:**
+
+- `_request_timeout` (Optional)
+  - Type: `typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]]`
+  - Default: `None`
+- `_request_auth` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_content_type` (Optional)
+  - Type: `typing.Optional[typing.Annotated[str, Strict(strict=True)]]`
+  - Default: `None`
+- `_headers` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_host_index` (Optional)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])]`
+  - Default: `0`
+
+**Description:**
+
+Get Total Resting Order Value
+Endpoint for getting the total value, in cents, of resting orders. This endpoint is only intended for use by FCM members (rare). Note: If you're uncertain about this endpoint, it likely does not apply to you.
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+### Portfolio
+
+#### `get_balance`
+
+**Signature:**
+```python
+def get_balance():
+```
+
+**Description:**
+
+Get Balance
+Endpoint for getting the balance and portfolio value of a member. Both values are returned in cents.
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_balance`
+
+**Signature:**
+```python
+def get_balance():
+```
+
+**Description:**
+
+Get Balance
+Endpoint for getting the balance and portfolio value of a member. Both values are returned in cents.
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_balance_with_http_info`
+
+**Signature:**
+```python
+def get_balance_with_http_info(_request_timeout: typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]] = None, _request_auth: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _content_type: typing.Optional[typing.Annotated[str, Strict(strict=True)]] = None, _headers: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _host_index: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])] = 0):
+```
+
+**Parameters:**
+
+- `_request_timeout` (Optional)
+  - Type: `typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]]`
+  - Default: `None`
+- `_request_auth` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_content_type` (Optional)
+  - Type: `typing.Optional[typing.Annotated[str, Strict(strict=True)]]`
+  - Default: `None`
+- `_headers` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_host_index` (Optional)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])]`
+  - Default: `0`
+
+**Description:**
+
+Get Balance
+Endpoint for getting the balance and portfolio value of a member. Both values are returned in cents.
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_balance_with_http_info`
+
+**Signature:**
+```python
+def get_balance_with_http_info(_request_timeout: typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]] = None, _request_auth: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _content_type: typing.Optional[typing.Annotated[str, Strict(strict=True)]] = None, _headers: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _host_index: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])] = 0):
+```
+
+**Parameters:**
+
+- `_request_timeout` (Optional)
+  - Type: `typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]]`
+  - Default: `None`
+- `_request_auth` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_content_type` (Optional)
+  - Type: `typing.Optional[typing.Annotated[str, Strict(strict=True)]]`
+  - Default: `None`
+- `_headers` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_host_index` (Optional)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])]`
+  - Default: `0`
+
+**Description:**
+
+Get Balance
+Endpoint for getting the balance and portfolio value of a member. Both values are returned in cents.
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_balance_without_preload_content`
+
+**Signature:**
+```python
+def get_balance_without_preload_content(_request_timeout: typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]] = None, _request_auth: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _content_type: typing.Optional[typing.Annotated[str, Strict(strict=True)]] = None, _headers: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _host_index: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])] = 0):
+```
+
+**Parameters:**
+
+- `_request_timeout` (Optional)
+  - Type: `typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]]`
+  - Default: `None`
+- `_request_auth` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_content_type` (Optional)
+  - Type: `typing.Optional[typing.Annotated[str, Strict(strict=True)]]`
+  - Default: `None`
+- `_headers` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_host_index` (Optional)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])]`
+  - Default: `0`
+
+**Description:**
+
+Get Balance
+Endpoint for getting the balance and portfolio value of a member. Both values are returned in cents.
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_balance_without_preload_content`
+
+**Signature:**
+```python
+def get_balance_without_preload_content(_request_timeout: typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]] = None, _request_auth: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _content_type: typing.Optional[typing.Annotated[str, Strict(strict=True)]] = None, _headers: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _host_index: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])] = 0):
+```
+
+**Parameters:**
+
+- `_request_timeout` (Optional)
+  - Type: `typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]]`
+  - Default: `None`
+- `_request_auth` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_content_type` (Optional)
+  - Type: `typing.Optional[typing.Annotated[str, Strict(strict=True)]]`
+  - Default: `None`
+- `_headers` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_host_index` (Optional)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])]`
+  - Default: `0`
+
+**Description:**
+
+Get Balance
+Endpoint for getting the balance and portfolio value of a member. Both values are returned in cents.
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_positions`
+
+**Signature:**
+```python
+def get_positions(cursor: typing.Any = None, limit: typing.Any = None, count_filter: typing.Any = None, ticker: typing.Any = None, event_ticker: typing.Any = None):
+```
+
+**Parameters:**
+
+- `cursor` (Optional)
+  - Type: `typing.Any`
+  - Default: `None`
+- `limit` (Optional)
+  - Type: `typing.Any`
+  - Default: `None`
+- `count_filter` (Optional)
+  - Type: `typing.Any`
+  - Default: `None`
+- `ticker` (Optional)
+  - Type: `typing.Any`
+  - Default: `None`
+- `event_ticker` (Optional)
+  - Type: `typing.Any`
+  - Default: `None`
+
+**Description:**
+
+Get Positions
+Restricts the positions to those with any of following fields with non-zero values, as a comma separated list. The following values are accepted: position, total_traded
+:param cursor: The Cursor represents a pointer to the next page of records in the pagination. Use the value returned from the previous response to get the next page.
+:type cursor: str
+:param limit: Parameter to specify the number of results per page. Defaults to 100.
+:type limit: int
+:param count_filter: Restricts the positions to those with any of following fields with non-zero values, as a comma separated list. The following values are accepted - position, total_traded
+:type count_filter: str
+:param ticker: Filter by market ticker
+:type ticker: str
+:param event_ticker: Event ticker of desired positions. Multiple event tickers can be provided as a comma-separated list (maximum 10).
+:type event_ticker: str
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_positions`
+
+**Signature:**
+```python
+def get_positions(cursor: typing.Any = None, limit: typing.Any = None, count_filter: typing.Any = None, ticker: typing.Any = None, event_ticker: typing.Any = None):
+```
+
+**Parameters:**
+
+- `cursor` (Optional)
+  - Type: `typing.Any`
+  - Default: `None`
+- `limit` (Optional)
+  - Type: `typing.Any`
+  - Default: `None`
+- `count_filter` (Optional)
+  - Type: `typing.Any`
+  - Default: `None`
+- `ticker` (Optional)
+  - Type: `typing.Any`
+  - Default: `None`
+- `event_ticker` (Optional)
+  - Type: `typing.Any`
+  - Default: `None`
+
+**Description:**
+
+Get Positions
+Restricts the positions to those with any of following fields with non-zero values, as a comma separated list. The following values are accepted: position, total_traded
+:param cursor: The Cursor represents a pointer to the next page of records in the pagination. Use the value returned from the previous response to get the next page.
+:type cursor: str
+:param limit: Parameter to specify the number of results per page. Defaults to 100.
+:type limit: int
+:param count_filter: Restricts the positions to those with any of following fields with non-zero values, as a comma separated list. The following values are accepted - position, total_traded
+:type count_filter: str
+:param ticker: Filter by market ticker
+:type ticker: str
+:param event_ticker: Event ticker of desired positions. Multiple event tickers can be provided as a comma-separated list (maximum 10).
+:type event_ticker: str
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_positions_with_http_info`
+
+**Signature:**
+```python
+def get_positions_with_http_info(cursor: typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='The Cursor represents a pointer to the next page of records in the pagination. Use the value returned from the previous response to get the next page.')] = None, limit: typing.Annotated[typing.Optional[typing.Annotated[int, FieldInfo(annotation=NoneType, required=True, metadata=[Strict(strict=True), Ge(ge=1), Le(le=1000)])]], FieldInfo(annotation=NoneType, required=True, description='Parameter to specify the number of results per page. Defaults to 100.')] = None, count_filter: typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Restricts the positions to those with any of following fields with non-zero values, as a comma separated list. The following values are accepted - position, total_traded')] = None, ticker: typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter by market ticker')] = None, event_ticker: typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Event ticker of desired positions. Multiple event tickers can be provided as a comma-separated list (maximum 10).')] = None, _request_timeout: typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]] = None, _request_auth: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _content_type: typing.Optional[typing.Annotated[str, Strict(strict=True)]] = None, _headers: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _host_index: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])] = 0):
+```
+
+**Parameters:**
+
+- `cursor` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='The Cursor represents a pointer to the next page of records in the pagination. Use the value returned from the previous response to get the next page.')]`
+  - Default: `None`
+- `limit` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[int, FieldInfo(annotation=NoneType, required=True, metadata=[Strict(strict=True), Ge(ge=1), Le(le=1000)])]], FieldInfo(annotation=NoneType, required=True, description='Parameter to specify the number of results per page. Defaults to 100.')]`
+  - Default: `None`
+- `count_filter` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Restricts the positions to those with any of following fields with non-zero values, as a comma separated list. The following values are accepted - position, total_traded')]`
+  - Default: `None`
+- `ticker` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter by market ticker')]`
+  - Default: `None`
+- `event_ticker` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Event ticker of desired positions. Multiple event tickers can be provided as a comma-separated list (maximum 10).')]`
+  - Default: `None`
+- `_request_timeout` (Optional)
+  - Type: `typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]]`
+  - Default: `None`
+- `_request_auth` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_content_type` (Optional)
+  - Type: `typing.Optional[typing.Annotated[str, Strict(strict=True)]]`
+  - Default: `None`
+- `_headers` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_host_index` (Optional)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])]`
+  - Default: `0`
+
+**Description:**
+
+Get Positions
+Restricts the positions to those with any of following fields with non-zero values, as a comma separated list. The following values are accepted: position, total_traded
+:param cursor: The Cursor represents a pointer to the next page of records in the pagination. Use the value returned from the previous response to get the next page.
+:type cursor: str
+:param limit: Parameter to specify the number of results per page. Defaults to 100.
+:type limit: int
+:param count_filter: Restricts the positions to those with any of following fields with non-zero values, as a comma separated list. The following values are accepted - position, total_traded
+:type count_filter: str
+:param ticker: Filter by market ticker
+:type ticker: str
+:param event_ticker: Event ticker of desired positions. Multiple event tickers can be provided as a comma-separated list (maximum 10).
+:type event_ticker: str
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_positions_with_http_info`
+
+**Signature:**
+```python
+def get_positions_with_http_info(cursor: typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='The Cursor represents a pointer to the next page of records in the pagination. Use the value returned from the previous response to get the next page.')] = None, limit: typing.Annotated[typing.Optional[typing.Annotated[int, FieldInfo(annotation=NoneType, required=True, metadata=[Strict(strict=True), Ge(ge=1), Le(le=1000)])]], FieldInfo(annotation=NoneType, required=True, description='Parameter to specify the number of results per page. Defaults to 100.')] = None, count_filter: typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Restricts the positions to those with any of following fields with non-zero values, as a comma separated list. The following values are accepted - position, total_traded')] = None, ticker: typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter by market ticker')] = None, event_ticker: typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Event ticker of desired positions. Multiple event tickers can be provided as a comma-separated list (maximum 10).')] = None, _request_timeout: typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]] = None, _request_auth: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _content_type: typing.Optional[typing.Annotated[str, Strict(strict=True)]] = None, _headers: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _host_index: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])] = 0):
+```
+
+**Parameters:**
+
+- `cursor` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='The Cursor represents a pointer to the next page of records in the pagination. Use the value returned from the previous response to get the next page.')]`
+  - Default: `None`
+- `limit` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[int, FieldInfo(annotation=NoneType, required=True, metadata=[Strict(strict=True), Ge(ge=1), Le(le=1000)])]], FieldInfo(annotation=NoneType, required=True, description='Parameter to specify the number of results per page. Defaults to 100.')]`
+  - Default: `None`
+- `count_filter` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Restricts the positions to those with any of following fields with non-zero values, as a comma separated list. The following values are accepted - position, total_traded')]`
+  - Default: `None`
+- `ticker` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter by market ticker')]`
+  - Default: `None`
+- `event_ticker` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Event ticker of desired positions. Multiple event tickers can be provided as a comma-separated list (maximum 10).')]`
+  - Default: `None`
+- `_request_timeout` (Optional)
+  - Type: `typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]]`
+  - Default: `None`
+- `_request_auth` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_content_type` (Optional)
+  - Type: `typing.Optional[typing.Annotated[str, Strict(strict=True)]]`
+  - Default: `None`
+- `_headers` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_host_index` (Optional)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])]`
+  - Default: `0`
+
+**Description:**
+
+Get Positions
+Restricts the positions to those with any of following fields with non-zero values, as a comma separated list. The following values are accepted: position, total_traded
+:param cursor: The Cursor represents a pointer to the next page of records in the pagination. Use the value returned from the previous response to get the next page.
+:type cursor: str
+:param limit: Parameter to specify the number of results per page. Defaults to 100.
+:type limit: int
+:param count_filter: Restricts the positions to those with any of following fields with non-zero values, as a comma separated list. The following values are accepted - position, total_traded
+:type count_filter: str
+:param ticker: Filter by market ticker
+:type ticker: str
+:param event_ticker: Event ticker of desired positions. Multiple event tickers can be provided as a comma-separated list (maximum 10).
+:type event_ticker: str
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_positions_without_preload_content`
+
+**Signature:**
+```python
+def get_positions_without_preload_content(cursor: typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='The Cursor represents a pointer to the next page of records in the pagination. Use the value returned from the previous response to get the next page.')] = None, limit: typing.Annotated[typing.Optional[typing.Annotated[int, FieldInfo(annotation=NoneType, required=True, metadata=[Strict(strict=True), Ge(ge=1), Le(le=1000)])]], FieldInfo(annotation=NoneType, required=True, description='Parameter to specify the number of results per page. Defaults to 100.')] = None, count_filter: typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Restricts the positions to those with any of following fields with non-zero values, as a comma separated list. The following values are accepted - position, total_traded')] = None, ticker: typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter by market ticker')] = None, event_ticker: typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Event ticker of desired positions. Multiple event tickers can be provided as a comma-separated list (maximum 10).')] = None, _request_timeout: typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]] = None, _request_auth: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _content_type: typing.Optional[typing.Annotated[str, Strict(strict=True)]] = None, _headers: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _host_index: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])] = 0):
+```
+
+**Parameters:**
+
+- `cursor` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='The Cursor represents a pointer to the next page of records in the pagination. Use the value returned from the previous response to get the next page.')]`
+  - Default: `None`
+- `limit` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[int, FieldInfo(annotation=NoneType, required=True, metadata=[Strict(strict=True), Ge(ge=1), Le(le=1000)])]], FieldInfo(annotation=NoneType, required=True, description='Parameter to specify the number of results per page. Defaults to 100.')]`
+  - Default: `None`
+- `count_filter` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Restricts the positions to those with any of following fields with non-zero values, as a comma separated list. The following values are accepted - position, total_traded')]`
+  - Default: `None`
+- `ticker` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter by market ticker')]`
+  - Default: `None`
+- `event_ticker` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Event ticker of desired positions. Multiple event tickers can be provided as a comma-separated list (maximum 10).')]`
+  - Default: `None`
+- `_request_timeout` (Optional)
+  - Type: `typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]]`
+  - Default: `None`
+- `_request_auth` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_content_type` (Optional)
+  - Type: `typing.Optional[typing.Annotated[str, Strict(strict=True)]]`
+  - Default: `None`
+- `_headers` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_host_index` (Optional)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])]`
+  - Default: `0`
+
+**Description:**
+
+Get Positions
+Restricts the positions to those with any of following fields with non-zero values, as a comma separated list. The following values are accepted: position, total_traded
+:param cursor: The Cursor represents a pointer to the next page of records in the pagination. Use the value returned from the previous response to get the next page.
+:type cursor: str
+:param limit: Parameter to specify the number of results per page. Defaults to 100.
+:type limit: int
+:param count_filter: Restricts the positions to those with any of following fields with non-zero values, as a comma separated list. The following values are accepted - position, total_traded
+:type count_filter: str
+:param ticker: Filter by market ticker
+:type ticker: str
+:param event_ticker: Event ticker of desired positions. Multiple event tickers can be provided as a comma-separated list (maximum 10).
+:type event_ticker: str
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+#### `get_positions_without_preload_content`
+
+**Signature:**
+```python
+def get_positions_without_preload_content(cursor: typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='The Cursor represents a pointer to the next page of records in the pagination. Use the value returned from the previous response to get the next page.')] = None, limit: typing.Annotated[typing.Optional[typing.Annotated[int, FieldInfo(annotation=NoneType, required=True, metadata=[Strict(strict=True), Ge(ge=1), Le(le=1000)])]], FieldInfo(annotation=NoneType, required=True, description='Parameter to specify the number of results per page. Defaults to 100.')] = None, count_filter: typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Restricts the positions to those with any of following fields with non-zero values, as a comma separated list. The following values are accepted - position, total_traded')] = None, ticker: typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter by market ticker')] = None, event_ticker: typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Event ticker of desired positions. Multiple event tickers can be provided as a comma-separated list (maximum 10).')] = None, _request_timeout: typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]] = None, _request_auth: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _content_type: typing.Optional[typing.Annotated[str, Strict(strict=True)]] = None, _headers: typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]] = None, _host_index: typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])] = 0):
+```
+
+**Parameters:**
+
+- `cursor` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='The Cursor represents a pointer to the next page of records in the pagination. Use the value returned from the previous response to get the next page.')]`
+  - Default: `None`
+- `limit` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[int, FieldInfo(annotation=NoneType, required=True, metadata=[Strict(strict=True), Ge(ge=1), Le(le=1000)])]], FieldInfo(annotation=NoneType, required=True, description='Parameter to specify the number of results per page. Defaults to 100.')]`
+  - Default: `None`
+- `count_filter` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Restricts the positions to those with any of following fields with non-zero values, as a comma separated list. The following values are accepted - position, total_traded')]`
+  - Default: `None`
+- `ticker` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Filter by market ticker')]`
+  - Default: `None`
+- `event_ticker` (Optional)
+  - Type: `typing.Annotated[typing.Optional[typing.Annotated[str, Strict(strict=True)]], FieldInfo(annotation=NoneType, required=True, description='Event ticker of desired positions. Multiple event tickers can be provided as a comma-separated list (maximum 10).')]`
+  - Default: `None`
+- `_request_timeout` (Optional)
+  - Type: `typing.Union[NoneType, typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Tuple[typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])], typing.Annotated[float, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])]]]`
+  - Default: `None`
+- `_request_auth` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_content_type` (Optional)
+  - Type: `typing.Optional[typing.Annotated[str, Strict(strict=True)]]`
+  - Default: `None`
+- `_headers` (Optional)
+  - Type: `typing.Optional[typing.Dict[typing.Annotated[str, Strict(strict=True)], typing.Any]]`
+  - Default: `None`
+- `_host_index` (Optional)
+  - Type: `typing.Annotated[int, Strict(strict=True), FieldInfo(annotation=NoneType, required=True, metadata=[Ge(ge=0), Le(le=0)])]`
+  - Default: `0`
+
+**Description:**
+
+Get Positions
+Restricts the positions to those with any of following fields with non-zero values, as a comma separated list. The following values are accepted: position, total_traded
+:param cursor: The Cursor represents a pointer to the next page of records in the pagination. Use the value returned from the previous response to get the next page.
+:type cursor: str
+:param limit: Parameter to specify the number of results per page. Defaults to 100.
+:type limit: int
+:param count_filter: Restricts the positions to those with any of following fields with non-zero values, as a comma separated list. The following values are accepted - position, total_traded
+:type count_filter: str
+:param ticker: Filter by market ticker
+:type ticker: str
+:param event_ticker: Event ticker of desired positions. Multiple event tickers can be provided as a comma-separated list (maximum 10).
+:type event_ticker: str
+:param _request_timeout: timeout setting for this request. If one
+number provided, it will be total request
+timeout. It can also be a pair (tuple) of
+(connection, read) timeouts.
+:type _request_timeout: int, tuple(int, int), optional
+:param _request_auth: set to override the auth_settings for an a single
+request; this effectively ignores the
+authentication in the spec for a single request.
+:type _request_auth: dict, optional
+:param _content_type: force content-type for the request.
+:type _content_type: str, Optional
+:param _headers: set to override the headers for a single
+request; this effectively ignores the headers
+in the spec for a single request.
+:type _headers: dict, optional
+:param _host_index: set to override the host_index for a single
+request; this effectively ignores the host_index
+in the spec for a single request.
+:type _host_index: int, optional
+:return: Returns the result object.
+
+---
+
+
+================================================================================
+## Models/Schemas
+================================================================================
+
+Found 120 model classes:
+
+### `AcceptQuoteRequest`
+*AcceptQuoteRequest*
+
+### `AmendOrderRequest`
+*AmendOrderRequest*
+
+### `AmendOrderResponse`
+*AmendOrderResponse*
+
+### `Announcement`
+*Announcement*
+
+### `ApiKey`
+*ApiKey*
+
+### `AssociatedEvent`
+*AssociatedEvent*
+
+### `BatchCancelOrdersIndividualResponse`
+*BatchCancelOrdersIndividualResponse*
+
+### `BatchCancelOrdersRequest`
+*BatchCancelOrdersRequest*
+
+### `BatchCancelOrdersResponse`
+*BatchCancelOrdersResponse*
+
+### `BatchCreateOrdersIndividualResponse`
+*BatchCreateOrdersIndividualResponse*
+
+### `BatchCreateOrdersRequest`
+*BatchCreateOrdersRequest*
+
+### `BatchCreateOrdersResponse`
+*BatchCreateOrdersResponse*
+
+### `BatchGetMarketCandlesticksResponse`
+*BatchGetMarketCandlesticksResponse*
+
+### `BidAskDistribution`
+*BidAskDistribution*
+
+### `CancelOrderResponse`
+*CancelOrderResponse*
+
+### `CreateApiKeyRequest`
+*CreateApiKeyRequest*
+
+### `CreateApiKeyResponse`
+*CreateApiKeyResponse*
+
+### `CreateMarketInMultivariateEventCollectionRequest`
+*CreateMarketInMultivariateEventCollectionRequest*
+
+### `CreateMarketInMultivariateEventCollectionResponse`
+*CreateMarketInMultivariateEventCollectionResponse*
+
+### `CreateOrderGroupRequest`
+*CreateOrderGroupRequest*
+
+### `CreateOrderGroupResponse`
+*CreateOrderGroupResponse*
+
+### `CreateOrderRequest`
+*CreateOrderRequest*
+
+### `CreateOrderResponse`
+*CreateOrderResponse*
+
+### `CreateQuoteRequest`
+*CreateQuoteRequest*
+
+### `CreateQuoteResponse`
+*CreateQuoteResponse*
+
+### `CreateRFQRequest`
+*CreateRFQRequest*
+
+### `CreateRFQResponse`
+*CreateRFQResponse*
+
+### `DailySchedule`
+*DailySchedule*
+
+### `DecreaseOrderRequest`
+*DecreaseOrderRequest*
+
+### `DecreaseOrderResponse`
+*DecreaseOrderResponse*
+
+### `ErrorResponse`
+*ErrorResponse*
+
+### `EventData`
+*EventData*
+
+### `EventPosition`
+*EventPosition*
+
+### `ExchangeStatus`
+*ExchangeStatus*
+
+### `Fill`
+*Fill*
+
+### `ForecastPercentilesPoint`
+*ForecastPercentilesPoint*
+
+### `GenerateApiKeyRequest`
+*GenerateApiKeyRequest*
+
+### `GenerateApiKeyResponse`
+*GenerateApiKeyResponse*
+
+### `GetApiKeysResponse`
+*GetApiKeysResponse*
+
+### `GetBalanceResponse`
+*GetBalanceResponse*
+
+### `GetCommunicationsIDResponse`
+*GetCommunicationsIDResponse*
+
+### `GetEventCandlesticksResponse`
+*GetEventCandlesticksResponse*
+
+### `GetEventForecastPercentilesHistoryResponse`
+*GetEventForecastPercentilesHistoryResponse*
+
+### `GetEventMetadataResponse`
+*GetEventMetadataResponse*
+
+### `GetEventResponse`
+*GetEventResponse*
+
+### `GetEventsResponse`
+*GetEventsResponse*
+
+### `GetExchangeAnnouncementsResponse`
+*GetExchangeAnnouncementsResponse*
+
+### `GetExchangeScheduleResponse`
+*GetExchangeScheduleResponse*
+
+### `GetFillsResponse`
+*GetFillsResponse*
+
+### `GetFiltersBySportsResponse`
+*GetFiltersBySportsResponse*
+
+### `GetIncentiveProgramsResponse`
+*GetIncentiveProgramsResponse*
+
+### `GetLiveDataResponse`
+*GetLiveDataResponse*
+
+### `GetLiveDatasResponse`
+*GetLiveDatasResponse*
+
+### `GetMarketCandlesticksResponse`
+*GetMarketCandlesticksResponse*
+
+### `GetMarketOrderbookResponse`
+*GetMarketOrderbookResponse*
+
+### `GetMarketResponse`
+*GetMarketResponse*
+
+### `GetMarketsResponse`
+*GetMarketsResponse*
+
+### `GetMilestoneResponse`
+*GetMilestoneResponse*
+
+### `GetMilestonesResponse`
+*GetMilestonesResponse*
+
+### `GetMultivariateEventCollectionLookupHistoryResponse`
+*GetMultivariateEventCollectionLookupHistoryResponse*
+
+### `GetMultivariateEventCollectionResponse`
+*GetMultivariateEventCollectionResponse*
+
+### `GetMultivariateEventCollectionsResponse`
+*GetMultivariateEventCollectionsResponse*
+
+### `GetMultivariateEventsResponse`
+*GetMultivariateEventsResponse*
+
+### `GetOrderGroupResponse`
+*GetOrderGroupResponse*
+
+### `GetOrderGroupsResponse`
+*GetOrderGroupsResponse*
+
+### `GetOrderQueuePositionResponse`
+*GetOrderQueuePositionResponse*
+
+### `GetOrderQueuePositionsResponse`
+*GetOrderQueuePositionsResponse*
+
+### `GetOrderResponse`
+*GetOrderResponse*
+
+### `GetOrdersResponse`
+*GetOrdersResponse*
+
+### `GetPortfolioRestingOrderTotalValueResponse`
+*GetPortfolioRestingOrderTotalValueResponse*
+
+### `GetPositionsResponse`
+*GetPositionsResponse*
+
+### `GetQuoteResponse`
+*GetQuoteResponse*
+
+### `GetQuotesResponse`
+*GetQuotesResponse*
+
+### `GetRFQResponse`
+*GetRFQResponse*
+
+### `GetRFQsResponse`
+*GetRFQsResponse*
+
+### `GetSeriesFeeChangesResponse`
+*GetSeriesFeeChangesResponse*
+
+### `GetSeriesListResponse`
+*GetSeriesListResponse*
+
+### `GetSeriesResponse`
+*GetSeriesResponse*
+
+### `GetSettlementsResponse`
+*GetSettlementsResponse*
+
+### `GetStructuredTargetResponse`
+*GetStructuredTargetResponse*
+
+### `GetStructuredTargetsResponse`
+*GetStructuredTargetsResponse*
+
+### `GetTagsForSeriesCategoriesResponse`
+*GetTagsForSeriesCategoriesResponse*
+
+### `GetTradesResponse`
+*GetTradesResponse*
+
+### `GetUserDataTimestampResponse`
+*GetUserDataTimestampResponse*
+
+### `IncentiveProgram`
+*IncentiveProgram*
+
+### `LiveData`
+*LiveData*
+
+### `LookupPoint`
+*LookupPoint*
+
+### `LookupTickersForMarketInMultivariateEventCollectionRequest`
+*LookupTickersForMarketInMultivariateEventCollectionRequest*
+
+### `LookupTickersForMarketInMultivariateEventCollectionResponse`
+*LookupTickersForMarketInMultivariateEventCollectionResponse*
+
+### `MaintenanceWindow`
+*MaintenanceWindow*
+
+### `Market`
+*Market*
+
+### `MarketCandlestick`
+*MarketCandlestick*
+
+### `MarketCandlesticksResponse`
+*MarketCandlesticksResponse*
+
+### `MarketMetadata`
+*MarketMetadata*
+
+### `MarketPosition`
+*MarketPosition*
+
+### `Milestone`
+*Milestone*
+
+### `MultivariateEventCollection`
+*MultivariateEventCollection*
+
+### `MveSelectedLeg`
+*MveSelectedLeg*
+
+### `Order`
+*Order*
+
+### `OrderGroup`
+*OrderGroup*
+
+### `OrderQueuePosition`
+*OrderQueuePosition*
+
+### `OrderStatus`
+*The status of an order*
+
+### `Orderbook`
+*Orderbook*
+
+### `PercentilePoint`
+*PercentilePoint*
+
+### `PriceDistribution`
+*PriceDistribution*
+
+### `PriceRange`
+*PriceRange*
+
+### `Quote`
+*Quote*
+
+### `RFQ`
+*RFQ*
+
+### `Schedule`
+*Schedule*
+
+### `ScopeList`
+*ScopeList*
+
+### `SelfTradePreventionType`
+*The self-trade prevention type for orders*
+
+### `Series`
+*Series*
+
+### `SeriesFeeChange`
+*SeriesFeeChange*
+
+### `Settlement`
+*Settlement*
+
+### `SettlementSource`
+*SettlementSource*
+
+### `SportFilterDetails`
+*SportFilterDetails*
+
+### `StructuredTarget`
+*StructuredTarget*
+
+### `TickerPair`
+*TickerPair*
+
+### `Trade`
+*Trade*
+
+### `WeeklySchedule`
+*WeeklySchedule*
+
+
+================================================================================
+## Summary
+================================================================================
+
+This reference was generated by exploring the installed `kalshi-python-sync` package.
+For the most up-to-date information, refer to:
+- PyPI: https://pypi.org/project/kalshi-python-sync/
+- Kalshi API Documentation: https://trade-api.kalshi.com/trade-api/documentation
+
+
+[OK] Documentation saved to: C:\Users\kbwil\Documents\Data_Projects\information_markets\information_markets\docs\sdk\KALSHI_SDK_REFERENCE.md
