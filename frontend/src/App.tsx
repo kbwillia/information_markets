@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import EdaBoard from "./eda.tsx";
 
 type Loose = Record<string, any>;
@@ -82,6 +82,41 @@ function price(value: unknown): string {
   return number.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 3 });
 }
 
+type HistoryPoint = { t: number; price: number; time_est: string };
+
+function PriceChart({ points, compact = false }: { points: HistoryPoint[]; compact?: boolean }) {
+  const width = compact ? 148 : 640;
+  const height = compact ? 46 : 168;
+  const pad = compact
+    ? { left: 4, right: 4, top: 4, bottom: 4 }
+    : { left: 36, right: 12, top: 12, bottom: 22 };
+  if (points.length < 2) {
+    return <span className="muted">No price history yet</span>;
+  }
+  const prices = points.map((point) => point.price);
+  const min = Math.min(...prices);
+  const max = Math.max(...prices);
+  const span = max - min || 0.05;
+  const innerW = width - pad.left - pad.right;
+  const innerH = height - pad.top - pad.bottom;
+  const xOf = (index: number) => pad.left + (index / (points.length - 1)) * innerW;
+  const yOf = (value: number) => pad.top + (1 - (value - min) / span) * innerH;
+  const line = points.map((point, index) => `${xOf(index)},${yOf(point.price)}`).join(" ");
+  const last = points[points.length - 1];
+  return (
+    <svg className={compact ? "spark" : "price-chart"} viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Yes price history">
+      {compact ? null : (
+        <>
+          <text x={4} y={pad.top + 4} className="axis">{max.toFixed(2)}</text>
+          <text x={4} y={height - pad.bottom} className="axis">{min.toFixed(2)}</text>
+          <text x={width - pad.right} y={height - 4} textAnchor="end" className="axis">{last.time_est}</text>
+        </>
+      )}
+      <polyline points={line} className="actual" />
+    </svg>
+  );
+}
+
 function shortAddr(addr: string | null | undefined): string {
   if (!addr || addr.length < 12) return addr || "--";
   return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
@@ -121,6 +156,8 @@ export default function App() {
   });
   const [latest, setLatest] = useState<Market[]>([]);
   const [latestAt, setLatestAt] = useState("");
+  const [histories, setHistories] = useState<Record<string, { window?: string; points: HistoryPoint[]; error?: string }>>({});
+  const historyRequested = useRef(new Set<string>());
   const pageSize = 50;
 
   async function refresh() {
@@ -284,6 +321,17 @@ async function act(path: string, body?: Loose) {
     return `${market.platform}:${market.id}`;
   }
 
+  async function loadHistory(market: Market) {
+    const key = marketKey(market);
+    const body = await getJson<{ window?: string; points?: HistoryPoint[] }>(
+      `/api/markets/history?platform=${encodeURIComponent(market.platform)}&id=${encodeURIComponent(market.id)}`,
+    );
+    setHistories((current) => ({
+      ...current,
+      [key]: { window: body.window, points: body.points || [] },
+    }));
+  }
+
   function isFollowed(market: Market) {
     return followed.some((item) => item.platform === market.platform && item.id === market.id);
   }
@@ -351,6 +399,32 @@ async function act(path: string, body?: Loose) {
   }
 
   const summary = runner?.summary;
+  const historyKey = [...(catalog?.markets || []), ...latest].map((market) => marketKey(market)).join("|");
+  useEffect(() => {
+    if (tab !== "markets" || !historyKey) return undefined;
+    const wanted = [...(catalog?.markets || []), ...latest];
+    const missing = wanted.filter((market) => !historyRequested.current.has(marketKey(market)));
+    if (missing.length === 0) return undefined;
+    missing.forEach((market) => historyRequested.current.add(marketKey(market)));
+    const queue = [...missing];
+    async function worker() {
+      while (queue.length > 0) {
+        const market = queue.shift();
+        if (!market) break;
+        try {
+          await loadHistory(market);
+        } catch (err) {
+          setHistories((current) => ({
+            ...current,
+            [marketKey(market)]: { points: [], error: errorMessage(err) },
+          }));
+        }
+      }
+    }
+    void Promise.all([worker(), worker(), worker()]);
+    return undefined;
+  }, [tab, historyKey]);
+
   const catalogMarkets = catalog?.markets || [];
   const catalogTotal = catalog?.total || 0;
   const pageCount = Math.max(1, Math.ceil(catalogTotal / pageSize));
@@ -1122,6 +1196,7 @@ async function act(path: string, body?: Loose) {
                         <th>Platform</th>
                         <th>Market</th>
                         <th>Volume</th>
+                        <th>Yes chart</th>
                         <th>Public API</th>
                         <th>Cost</th>
                         <th>Strategy</th>
@@ -1150,6 +1225,13 @@ async function act(path: string, body?: Loose) {
                             <div className="muted">{market.id}</div>
                           </td>
                           <td>{money(market.volume)}</td>
+                          <td onClick={(event) => event.stopPropagation()}>
+                            {histories[marketKey(market)]?.error ? (
+                              <span className="muted">Chart unavailable</span>
+                            ) : (
+                              <PriceChart compact points={histories[marketKey(market)]?.points || []} />
+                            )}
+                          </td>
                           <td>
                             {market.playbook?.api || "--"}
                             <div className="muted">{market.playbook?.endpoint || ""}</div>
@@ -1172,31 +1254,21 @@ async function act(path: string, body?: Loose) {
             ) : (
               <>
                 <p className="muted">{latestAt ? `Quotes as of ${latestAt}` : ""}</p>
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Platform</th>
-                      <th>Market</th>
-                      <th>Yes</th>
-                      <th>Volume</th>
-                      <th>Updated</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {latest.map((market) => (
-                      <tr key={marketKey(market)}>
-                        <td>{market.platform}</td>
-                        <td>
-                          {market.title || market.id}
-                          <div className="muted">{market.error || market.id}</div>
-                        </td>
-                        <td>{price(market.yes_price)}</td>
-                        <td>{money(market.volume)}</td>
-                        <td>{market.fetched_at_est || "--"}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                {latest.map((market) => {
+                  const history = histories[marketKey(market)];
+                  return (
+                    <div className="latest-card" key={marketKey(market)}>
+                      <div className="row">
+                        <strong>{market.title || market.id}</strong>
+                        <span className="muted">{market.platform}</span>
+                        <span>Yes {price(market.yes_price)}</span>
+                        <span>Volume {money(market.volume)}</span>
+                        <span className="muted">{history?.window || market.fetched_at_est || ""}</span>
+                      </div>
+                      {history?.error ? <p className="muted">Chart unavailable</p> : <PriceChart points={history?.points || []} />}
+                    </div>
+                  );
+                })}
               </>
             )}
           </section>

@@ -583,6 +583,142 @@ def market_latest(body: LatestRequest):
     return {"markets": rows, "fetched_at_est": fetched, "errors": errors}
 
 
+_history_lock = threading.Lock()
+_history_cache: dict[str, dict] = {}
+HISTORY_TTL_SECONDS = 180
+
+
+def _epoch_est(ts: int) -> str:
+    return datetime.fromtimestamp(int(ts), EST).strftime("%b %d, %I:%M %p EST")
+
+
+def _candle_close(candle: dict):
+    price = candle.get("price") or {}
+    close = _number(price.get("close_dollars"))
+    if close is None:
+        close = _number(price.get("close"))
+    if close is not None and close > 0:
+        return close
+    bid = _number((candle.get("yes_bid") or {}).get("close_dollars"))
+    ask = _number((candle.get("yes_ask") or {}).get("close_dollars"))
+    if bid is not None and ask is not None and ask > 0:
+        return round((bid + ask) / 2, 4)
+    if ask is not None and ask > 0:
+        return ask
+    return bid
+
+
+def _history_points(raw: list[tuple[int, float]]) -> list[dict]:
+    points = [{"t": ts, "price": price, "time_est": _epoch_est(ts)} for ts, price in raw if price is not None]
+    if len(points) <= 80:
+        return points
+    step = max(1, len(points) // 80)
+    trimmed = points[::step]
+    if trimmed[-1]["t"] != points[-1]["t"]:
+        trimmed.append(points[-1])
+    return trimmed
+
+
+def _polymarket_token(market_id: str) -> str:
+    response = requests.get(f"https://gamma-api.polymarket.com/markets/{market_id}", timeout=25)
+    response.raise_for_status()
+    raw = response.json().get("clobTokenIds")
+    if isinstance(raw, str):
+        raw = json.loads(raw)
+    if not isinstance(raw, list) or not raw:
+        raise HTTPException(status_code=404, detail="This Polymarket market has no price series")
+    return str(raw[0])
+
+
+def _polymarket_history(market_id: str) -> dict:
+    token = _polymarket_token(market_id)
+    response = requests.get(
+        "https://clob.polymarket.com/prices-history",
+        params={"market": token, "interval": "1w", "fidelity": 30},
+        timeout=25,
+    )
+    response.raise_for_status()
+    history = response.json().get("history") or []
+    window = "Past week"
+    if len(history) < 2:
+        response = requests.get(
+            "https://clob.polymarket.com/prices-history",
+            params={"market": token, "interval": "max", "fidelity": 180},
+            timeout=25,
+        )
+        response.raise_for_status()
+        history = response.json().get("history") or []
+        window = "Available history"
+    points = _history_points([(int(point["t"]), float(point["p"])) for point in history if point.get("t") is not None and point.get("p") is not None])
+    return {"window": window, "points": points}
+
+
+def _kalshi_history(ticker: str) -> dict:
+    response = requests.get(f"https://api.elections.kalshi.com/trade-api/v2/markets/{ticker}", timeout=25)
+    response.raise_for_status()
+    market = response.json().get("market") or {}
+    series = str(market.get("event_ticker") or "").split("-")[0]
+    if not series:
+        raise HTTPException(status_code=404, detail="This Kalshi market has no candlestick series")
+    end = int(time.time())
+    windows = (
+        (60, 14 * 86400, "Past 14 days"),
+        (1, 86400, "Past day"),
+        (1440, 120 * 86400, "Available history"),
+    )
+    points: list[dict] = []
+    window = windows[-1][2]
+    for interval, span, label in windows:
+        candle_response = requests.get(
+            f"https://api.elections.kalshi.com/trade-api/v2/series/{series}/markets/{ticker}/candlesticks",
+            params={"start_ts": end - span, "end_ts": end, "period_interval": interval},
+            timeout=25,
+        )
+        candle_response.raise_for_status()
+        candles = candle_response.json().get("candlesticks") or []
+        raw = []
+        for candle in candles:
+            close = _candle_close(candle)
+            ts = candle.get("end_period_ts")
+            if close is None or ts is None:
+                continue
+            raw.append((int(ts), close))
+        series_points = _history_points(raw)
+        if len(series_points) > len(points):
+            points = series_points
+            window = label
+        if len(points) >= 2:
+            break
+    return {"window": window, "points": points}
+
+
+@app.get("/api/markets/history")
+def market_history(platform: str, id: str):
+    platform = platform.strip().lower()
+    market_id = id.strip()
+    if platform not in ("kalshi", "polymarket") or not market_id:
+        raise HTTPException(status_code=400, detail="History needs a kalshi or polymarket id")
+    key = f"{platform}:{market_id}"
+    now = time.time()
+    with _history_lock:
+        cached = _history_cache.get(key)
+        if cached and now - cached["at"] < HISTORY_TTL_SECONDS:
+            return cached["payload"]
+    try:
+        if platform == "polymarket":
+            series = _polymarket_history(market_id)
+        else:
+            series = _kalshi_history(market_id)
+    except HTTPException:
+        raise
+    except requests.RequestException as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+    payload = {"platform": platform, "id": market_id, **series}
+    with _history_lock:
+        _history_cache[key] = {"at": now, "payload": payload}
+    return payload
+
+
 def _live_markets(platform: str | None, limit: int) -> dict:
     now = time.time()
     with _live_lock:
