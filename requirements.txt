@@ -26,6 +26,10 @@ openai>=1.0.0  # Fallback option
 sqlalchemy>=2.0.0
 # sqlite3 is built-in to Python, no need to install
 
+# Dashboard API
+fastapi>=0.115.0
+uvicorn>=0.32.0
+
 # Async support
 aiohttp>=3.8.0
 # asyncio is built-in to Python, no need to install

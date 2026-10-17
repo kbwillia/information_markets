@@ -6,6 +6,8 @@ from src.strategies.trading.price_alerts import PriceAlertStrategy
 from src.strategies.trading.price_convergence import PriceConvergenceStrategy
 from src.strategies.trading.momentum import MomentumStrategy
 from src.strategies.trading.arbitrage import ArbitrageStrategy
+from src.strategies.trading.complete_set import CompleteSetStrategy
+from src.strategies.trading.copy_top_traders import CopyTopTradersStrategy
 
 __all__ = [
     'BaseStrategy',
@@ -18,5 +20,7 @@ __all__ = [
     'PriceConvergenceStrategy',
     'MomentumStrategy',
     'ArbitrageStrategy',
+    'CompleteSetStrategy',
+    'CopyTopTradersStrategy',
 ]
 

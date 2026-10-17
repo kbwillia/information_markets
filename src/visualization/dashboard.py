@@ -17,6 +17,7 @@ import numpy as np
 from src.strategies.trading.runner import StrategyRunner, RunnerStats
 from src.strategies.trading.base import Signal, TradeResult
 from src.core.data_manager import DataManager, MatchedMarket
+from src.visualization.trader_stats import fetch_trader_leaderboard, calculate_trader_metrics
 
 
 class StrategyDashboard:
@@ -34,11 +35,13 @@ class StrategyDashboard:
         # Color scheme
         self.colors = {
             'arbitrage': '#FF6B6B',
+            'complete_set': '#E67E22',
             'momentum': '#4ECDC4',
             'lead_lag': '#45B7D1',
             'volume_spike': '#FFA07A',
             'price_convergence': '#98D8C8',
             'price_alerts': '#F7DC6F',
+            'copy_top_traders': '#9B59B6',
             'default': '#95A5A6',
             'success': '#2ECC71',
             'failure': '#E74C3C',
@@ -250,26 +253,71 @@ class StrategyDashboard:
         
         return fig
     
-    def plot_strategy_comparison(self, save: bool = True):
+    def plot_strategy_comparison(self, days: int = 7, save: bool = True):
         """Compare performance across different strategies."""
-        if not self.runner:
-            print("No runner available for strategy comparison")
-            return None
-        
-        # Get stats from each strategy
+        # Try to get data from runner first, then from logs
         strategy_stats = {}
-        for name, strategy in self.runner.strategies.items():
-            stats = strategy.get_performance_stats()
-            strategy_stats[name] = stats
+        
+        if self.runner:
+            # Get stats from each strategy
+            for name, strategy in self.runner.strategies.items():
+                stats = strategy.get_performance_stats()
+                strategy_stats[name] = stats
+        
+        # Also load from log history
+        history = self.load_history_from_logs(days=days)
+        run_history = history.get('run_history', [])
+        
+        # Aggregate stats by strategy from logs
+        strategy_aggregates = defaultdict(lambda: {
+            'total_signals': 0,
+            'total_trades': 0,
+            'successful_trades': 0,
+            'failed_trades': 0
+        })
+        
+        for entry in run_history:
+            by_strategy = entry.get('by_strategy', {})
+            for strategy_name, stats in by_strategy.items():
+                if isinstance(stats, dict) and 'error' not in stats:
+                    strategy_aggregates[strategy_name]['total_signals'] += stats.get('signals', 0)
+                    strategy_aggregates[strategy_name]['total_trades'] += stats.get('trades', 0)
+                    strategy_aggregates[strategy_name]['successful_trades'] += stats.get('successful', 0)
+                    strategy_aggregates[strategy_name]['failed_trades'] += stats.get('trades', 0) - stats.get('successful', 0)
+        
+        # Merge log data with runner data
+        for strategy_name, agg in strategy_aggregates.items():
+            if strategy_name not in strategy_stats:
+                strategy_stats[strategy_name] = {}
+            
+            # Update with log data (prefer log data if available)
+            strategy_stats[strategy_name]['total_signals'] = max(
+                strategy_stats[strategy_name].get('total_signals', 0),
+                agg['total_signals']
+            )
+            strategy_stats[strategy_name]['total_trades'] = max(
+                strategy_stats[strategy_name].get('total_trades', 0),
+                agg['total_trades']
+            )
+            
+            # Calculate success rate
+            total_trades = agg['total_trades']
+            successful = agg['successful_trades']
+            if total_trades > 0:
+                strategy_stats[strategy_name]['success_rate'] = successful / total_trades
+            else:
+                strategy_stats[strategy_name]['success_rate'] = strategy_stats[strategy_name].get('success_rate', 0.0)
         
         if not strategy_stats:
-            print("No strategy data available")
-            return None
+            return self._create_empty_chart(
+                "Strategy Comparison",
+                "No strategy data available. Run strategies first to generate data."
+            )
         
         fig = make_subplots(
             rows=2, cols=2,
             subplot_titles=('Total Signals Generated', 'Total Trades Executed',
-                           'Success Rate by Strategy', 'Paper Trading P&L'),
+                           'Success Rate by Strategy', 'Average Trades per Signal'),
             vertical_spacing=0.12,
             horizontal_spacing=0.1
         )
@@ -278,57 +326,70 @@ class StrategyDashboard:
         colors_list = [self.colors.get(s, self.colors['default']) for s in strategies]
         
         # 1. Total signals
-        signals = [strategy_stats[s]['total_signals'] for s in strategies]
+        signals = [strategy_stats[s].get('total_signals', 0) for s in strategies]
         fig.add_trace(
             go.Bar(x=strategies, y=signals, name='Signals',
-                  marker_color=colors_list, text=signals, textposition='auto'),
+                  marker_color=colors_list, text=signals, textposition='auto',
+                  hovertemplate='<b>%{x}</b><br>Signals: %{y}<extra></extra>'),
             row=1, col=1
         )
         
         # 2. Total trades
-        trades = [strategy_stats[s]['total_trades'] for s in strategies]
+        trades_count = [strategy_stats[s].get('total_trades', 0) for s in strategies]
         fig.add_trace(
-            go.Bar(x=strategies, y=trades, name='Trades',
-                  marker_color=colors_list, text=trades, textposition='auto'),
+            go.Bar(x=strategies, y=trades_count, name='Trades',
+                  marker_color=colors_list, text=trades_count, textposition='auto',
+                  hovertemplate='<b>%{x}</b><br>Trades: %{y}<extra></extra>'),
             row=1, col=2
         )
         
         # 3. Success rate
-        success_rates = [strategy_stats[s]['success_rate'] * 100 for s in strategies]
+        success_rates = [strategy_stats[s].get('success_rate', 0.0) * 100 for s in strategies]
         colors_success = [self.colors['success'] if sr >= 50 else self.colors['failure'] 
                          for sr in success_rates]
         fig.add_trace(
             go.Bar(x=strategies, y=success_rates, name='Success Rate',
                   marker_color=colors_success, text=[f'{sr:.1f}%' for sr in success_rates],
-                  textposition='auto'),
+                  textposition='auto',
+                  hovertemplate='<b>%{x}</b><br>Success Rate: %{y:.1f}%<extra></extra>'),
             row=2, col=1
         )
         fig.add_hline(y=50, line_dash="dash", line_color="red", 
                      opacity=0.5, row=2, col=1)
         
-        # 4. Paper P&L
-        pnl = [strategy_stats[s]['paper_pnl'] for s in strategies]
-        colors_pnl = [self.colors['success'] if p >= 0 else self.colors['failure'] 
-                     for p in pnl]
+        # 4. Average trades per signal (conversion rate)
+        conversion_rates = []
+        for s in strategies:
+            sigs = strategy_stats[s].get('total_signals', 0)
+            trds = strategy_stats[s].get('total_trades', 0)
+            if sigs > 0:
+                conversion_rates.append((trds / sigs) * 100)
+            else:
+                conversion_rates.append(0.0)
+        
         fig.add_trace(
-            go.Bar(x=strategies, y=pnl, name='P&L',
-                  marker_color=colors_pnl, text=[f'${p:.2f}' for p in pnl],
-                  textposition='auto'),
+            go.Bar(x=strategies, y=conversion_rates, name='Conversion Rate',
+                  marker_color=colors_list, text=[f'{cr:.1f}%' for cr in conversion_rates],
+                  textposition='auto',
+                  hovertemplate='<b>%{x}</b><br>Conversion: %{y:.1f}%<extra></extra>'),
             row=2, col=2
         )
-        fig.add_hline(y=0, line_color="black", line_width=1, row=2, col=2)
         
         fig.update_layout(
-            title=dict(text='Strategy Comparison', font=dict(size=20)),
+            title=dict(text='Strategy Performance Comparison', font=dict(size=20)),
             template=self.template,
             height=800,
             showlegend=False
         )
         
+        fig.update_xaxes(title_text="Strategy", row=1, col=1, tickangle=-45)
+        fig.update_xaxes(title_text="Strategy", row=1, col=2, tickangle=-45)
+        fig.update_xaxes(title_text="Strategy", row=2, col=1, tickangle=-45)
+        fig.update_xaxes(title_text="Strategy", row=2, col=2, tickangle=-45)
         fig.update_yaxes(title_text="Count", row=1, col=1)
         fig.update_yaxes(title_text="Count", row=1, col=2)
         fig.update_yaxes(title_text="Success Rate (%)", row=2, col=1, range=[0, 100])
-        fig.update_yaxes(title_text="P&L ($)", row=2, col=2)
+        fig.update_yaxes(title_text="Conversion Rate (%)", row=2, col=2)
         
         if save:
             output_file = self.output_dir / 'strategy_comparison.html'
@@ -893,76 +954,372 @@ class StrategyDashboard:
         
         return fig
     
+    def plot_trader_leaderboard(self, limit: int = 25, time_period: str = "ALL", save: bool = True):
+        """Plot top traders leaderboard from Polymarket."""
+        print(f"Fetching trader leaderboard data for {time_period}...")
+        
+        try:
+            # Fetch traders with profitable percentage calculation
+            traders = fetch_trader_leaderboard(limit=limit, time_period=time_period, include_profitable_pct=True)
+            
+            if not traders:
+                return self._create_empty_chart(
+                    f"Top Traders Leaderboard ({time_period})",
+                    "No trader data available"
+                )
+            
+            # Prepare data
+            ranks = []
+            usernames = []  # Truncated for display
+            full_usernames = []  # Full names for tooltips
+            pnls = []
+            volumes = []
+            
+            for trader in traders[:limit]:
+                ranks.append(int(trader.get('rank', 0) or 0))
+                full_username = trader.get('userName') or trader.get('username') or f"User {trader.get('proxyWallet', '')[:8]}"
+                # Truncate to 15 characters for display
+                truncated_username = (full_username[:15] + '...') if len(full_username) > 15 else full_username
+                usernames.append(truncated_username)
+                full_usernames.append(full_username)
+                pnl = float(trader.get('pnl', 0) or 0)
+                pnls.append(pnl)
+                vol = float(trader.get('vol', trader.get('volume', 0)) or 0)
+                volumes.append(vol)
+            
+            # Get profitable trade percentage for each trader
+            # Use the traders list we already fetched, but calculate profitable % if not present
+            profitable_pcts = []
+            for trader in traders[:limit]:
+                # Try to get win rate or profitable percentage from API response first
+                win_rate = trader.get('winRate') or trader.get('win_rate') or trader.get('profitable_pct')
+                if win_rate is not None:
+                    # Convert to percentage if it's a decimal (0-1) or keep as is if already percentage
+                    pct = float(win_rate) * 100 if float(win_rate) < 1 else float(win_rate)
+                    profitable_pcts.append(pct)
+                else:
+                    # Calculate from closed positions
+                    trader_address = trader.get('proxyWallet') or trader.get('address')
+                    if trader_address:
+                        from src.visualization.trader_stats import calculate_trader_profitable_percentage
+                        profitable_pct = calculate_trader_profitable_percentage(trader_address)
+                        if profitable_pct is not None:
+                            profitable_pcts.append(profitable_pct)
+                        else:
+                            profitable_pcts.append(None)
+                    else:
+                        profitable_pcts.append(None)
+            
+            # Create single chart with PnL and profitable percentage
+            fig = make_subplots(
+                rows=2, cols=1,
+                subplot_titles=(f'Top Traders by Profit & Loss ({time_period})', f'Profitable Trade Percentage ({time_period})'),
+                vertical_spacing=0.25,  # Increased spacing between charts
+                row_heights=[0.55, 0.45],  # More balanced heights
+                specs=[[{"type": "bar"}], [{"type": "bar"}]]
+            )
+            
+            # PnL bar chart
+            colors_pnl = ['#2ECC71' if p > 0 else '#E74C3C' for p in pnls]
+            fig.add_trace(
+                go.Bar(
+                    x=usernames,
+                    y=pnls,
+                    name='PnL',
+                    marker_color=colors_pnl,
+                    text=[f"${p:,.2f}" for p in pnls],
+                    textposition='outside',
+                    hovertemplate='<b>%{customdata[0]}</b><br>PnL: $%{y:,.2f}<br>Rank: %{customdata[1]}<extra></extra>',
+                    customdata=list(zip(full_usernames, ranks))
+                ),
+                row=1, col=1
+            )
+            
+            # Profitable trade percentage bar chart
+            # Filter out None values and create data
+            valid_indices = [i for i, pct in enumerate(profitable_pcts) if pct is not None]
+            if valid_indices:
+                valid_usernames = [usernames[i] for i in valid_indices]
+                valid_pcts = [profitable_pcts[i] for i in valid_indices]
+                valid_full_usernames = [full_usernames[i] for i in valid_indices]
+                valid_ranks = [ranks[i] for i in valid_indices]
+                
+                colors_pct = ['#2ECC71' if p >= 50 else '#E74C3C' for p in valid_pcts]
+                fig.add_trace(
+                    go.Bar(
+                        x=valid_usernames,
+                        y=valid_pcts,
+                        name='Profitable %',
+                        marker_color=colors_pct,
+                        text=[f"{p:.1f}%" for p in valid_pcts],
+                        textposition='outside',
+                        hovertemplate='<b>%{customdata[0]}</b><br>Profitable: %{y:.1f}%<br>Rank: %{customdata[1]}<extra></extra>',
+                        customdata=list(zip(valid_full_usernames, valid_ranks))
+                    ),
+                    row=2, col=1
+                )
+                fig.add_hline(y=50, line_dash="dash", line_color="red", 
+                             opacity=0.3, row=2, col=1)
+            else:
+                # If no profitable percentage data, show message
+                fig.add_annotation(
+                    text="Profitable trade percentage data not available",
+                    xref='paper', yref='paper',
+                    x=0.5, y=0.2, showarrow=False,
+                    font=dict(size=14, color='#95A5A6'),
+                    row=2, col=1
+                )
+            
+            # Update axes with proper spacing
+            fig.update_xaxes(
+                title_text="Trader", 
+                row=1, col=1, 
+                tickangle=-45,
+                title_standoff=15
+            )
+            fig.update_xaxes(
+                title_text="Trader", 
+                row=2, col=1, 
+                tickangle=-45,
+                title_standoff=15
+            )
+            fig.update_yaxes(
+                title_text="PnL ($)", 
+                row=1, col=1,
+                title_standoff=10
+            )
+            fig.update_yaxes(
+                title_text="Profitable Trade %", 
+                row=2, col=1, 
+                range=[0, 100],
+                title_standoff=10
+            )
+            
+            fig.update_layout(
+                title=dict(
+                    text=f"Top {len(traders)} Traders Leaderboard ({time_period})",
+                    font=dict(size=24)
+                ),
+                template=self.template,
+                height=1000,  # Increased height to prevent overlap
+                showlegend=False,
+                hovermode='closest',
+                margin=dict(t=100, b=100, l=80, r=50)  # Add margins for text labels
+            )
+            
+            if save:
+                output_file = self.output_dir / f"trader_leaderboard_{time_period.lower()}.html"
+                fig.write_html(str(output_file))
+                print(f"Trader leaderboard saved to: {output_file}")
+            
+            return fig
+            
+        except Exception as e:
+            print(f"Error plotting trader leaderboard: {e}")
+            return self._create_empty_chart(
+                f"Top Traders Leaderboard ({time_period})",
+                f"Error loading data: {e}"
+            )
+    
+    def plot_trader_metrics(self, time_period: str = "ALL", save: bool = True):
+        """Plot aggregate trader statistics and metrics."""
+        print(f"Fetching trader metrics for {time_period}...")
+        
+        try:
+            traders = fetch_trader_leaderboard(limit=50, time_period=time_period)
+            metrics = calculate_trader_metrics(traders)
+            
+            if metrics['total_traders'] == 0:
+                return self._create_empty_chart(
+                    f"Trader Statistics ({time_period})",
+                    "No trader data available"
+                )
+            
+            # Create subplots
+            fig = make_subplots(
+                rows=2, cols=2,
+                subplot_titles=('Total Traders', 'Profitable Traders %', 
+                              'Average PnL', 'Total Volume'),
+                specs=[[{"type": "bar"}, {"type": "bar"}],
+                       [{"type": "bar"}, {"type": "bar"}]]
+            )
+            
+            periods = [time_period] # Only one period for this chart
+            
+            # Total traders
+            fig.add_trace(
+                go.Bar(x=periods, y=[metrics['total_traders']],
+                      name='Total Traders', marker_color='#3498DB'),
+                row=1, col=1
+            )
+            
+            # Profitable %
+            fig.add_trace(
+                go.Bar(x=periods, y=[metrics['profitable_pct']],
+                      name='Profitable %', marker_color='#2ECC71'),
+                row=1, col=2
+            )
+            
+            # Average PnL
+            colors_pnl = ['#2ECC71' if metrics['avg_pnl'] > 0 else '#E74C3C']
+            fig.add_trace(
+                go.Bar(x=periods, y=[metrics['avg_pnl']],
+                      name='Avg PnL', marker_color=colors_pnl),
+                row=2, col=1
+            )
+            
+            # Total Volume
+            fig.add_trace(
+                go.Bar(x=periods, y=[metrics['total_volume']],
+                      name='Total Volume', marker_color='#9B59B6'),
+                row=2, col=2
+            )
+            
+            fig.update_xaxes(title_text="Time Period", row=1, col=1)
+            fig.update_xaxes(title_text="Time Period", row=1, col=2)
+            fig.update_xaxes(title_text="Time Period", row=2, col=1)
+            fig.update_xaxes(title_text="Time Period", row=2, col=2)
+            
+            fig.update_yaxes(title_text="Count", row=1, col=1)
+            fig.update_yaxes(title_text="Percentage", row=1, col=2)
+            fig.update_yaxes(title_text="PnL ($)", row=2, col=1)
+            fig.update_yaxes(title_text="Volume ($)", row=2, col=2)
+            
+            fig.update_layout(
+                title=dict(
+                    text=f"Trader Statistics Overview ({time_period})",
+                    font=dict(size=24)
+                ),
+                template=self.template,
+                height=700,
+                showlegend=False
+            )
+            
+            if save:
+                output_file = self.output_dir / f"trader_metrics_{time_period.lower()}.html"
+                fig.write_html(str(output_file))
+                print(f"Trader metrics saved to: {output_file}")
+            
+            return fig
+            
+        except Exception as e:
+            print(f"Error plotting trader metrics: {e}")
+            return self._create_empty_chart(
+                f"Trader Statistics ({time_period})",
+                f"Error loading data: {e}"
+            )
+    
     def generate_combined_dashboard(self, days: int = 7, filename: str = "trading_dashboard.html", save: bool = True):
         """Generate a single HTML dashboard with all charts combined."""
         print("Generating combined interactive dashboard...")
         
-        charts = {}
+        # Generate charts for multiple time periods
+        time_periods = {
+            '1d': 1,
+            '7d': 7,
+            '30d': 30,
+            '90d': 90,
+            'all': 365  # Max 1 year
+        }
         
-        # Generate all charts (without saving individually)
-        try:
-            fig = self.plot_performance_over_time(days=days, save=False)
-            if fig:
-                charts['performance'] = fig
-        except Exception as e:
-            print(f"Error generating performance chart: {e}")
+        charts = {} # Charts for the default period (e.g., 7 days)
+        charts_data_by_period = {}  # Store data for each time period
         
-        try:
-            fig = self.plot_strategy_comparison(save=False)
-            if fig:
-                charts['comparison'] = fig
-        except Exception as e:
-            print(f"Error generating strategy comparison: {e}")
-        
-        try:
-            fig = self.plot_signal_distribution(save=False)
-            if fig:
-                charts['signals'] = fig
-        except Exception as e:
-            print(f"Error generating signal distribution: {e}")
-        
-        try:
-            fig = self.plot_market_matching_stats(save=False)
-            if fig:
-                charts['matching'] = fig
-        except Exception as e:
-            print(f"Error generating market matching stats: {e}")
-        
-        try:
-            fig = self.plot_arbitrage_opportunities(save=False)
-            if fig:
-                charts['arbitrage'] = fig
-        except Exception as e:
-            print(f"Error generating arbitrage chart: {e}")
-        
-        # Market statistics charts
-        try:
-            fig = self.plot_market_overview(save=False)
-            if fig:
-                charts['market_overview'] = fig
-        except Exception as e:
-            print(f"Error generating market overview: {e}")
-        
-        try:
-            fig = self.plot_volume_metrics(save=False)
-            if fig:
-                charts['volume'] = fig
-        except Exception as e:
-            print(f"Error generating volume metrics: {e}")
-        
-        try:
-            fig = self.plot_platform_comparison(save=False)
-            if fig:
-                charts['platform_comparison'] = fig
-        except Exception as e:
-            print(f"Error generating platform comparison: {e}")
+        print("Generating charts for all time periods...")
+        for period_name, num_days in time_periods.items():
+            print(f"  Generating charts for {period_name} ({num_days} days)...")
+            period_charts = {}
+            
+            # Generate all charts (without saving individually)
+            try:
+                fig = self.plot_performance_over_time(days=num_days, save=False)
+                if fig:
+                    period_charts['performance'] = fig
+            except Exception as e:
+                print(f"    Error generating performance chart: {e}")
+            
+            try:
+                fig = self.plot_strategy_comparison(days=num_days, save=False)
+                if fig:
+                    period_charts['comparison'] = fig
+            except Exception as e:
+                print(f"    Error generating strategy comparison: {e}")
+            
+            try:
+                fig = self.plot_signal_distribution(save=False)
+                if fig:
+                    period_charts['signals'] = fig
+            except Exception as e:
+                print(f"    Error generating signal distribution: {e}")
+            
+            try:
+                fig = self.plot_market_matching_stats(save=False)
+                if fig:
+                    period_charts['matching'] = fig
+            except Exception as e:
+                print(f"    Error generating market matching stats: {e}")
+            
+            try:
+                fig = self.plot_arbitrage_opportunities(save=False)
+                if fig:
+                    period_charts['arbitrage'] = fig
+            except Exception as e:
+                print(f"    Error generating arbitrage chart: {e}")
+
+            # Market statistics charts (not time-dependent, only generate once for default period)
+            if period_name == '7d' or not charts: # Only generate once or if no default charts exist
+                try:
+                    fig = self.plot_market_overview(save=False)
+                    if fig:
+                        period_charts['market_overview'] = fig
+                except Exception as e:
+                    print(f"    Error generating market overview: {e}")
+                
+                try:
+                    fig = self.plot_volume_metrics(save=False)
+                    if fig:
+                        period_charts['volume'] = fig
+                except Exception as e:
+                    print(f"    Error generating volume metrics: {e}")
+                
+                try:
+                    fig = self.plot_platform_comparison(save=False)
+                    if fig:
+                        period_charts['platform_comparison'] = fig
+                except Exception as e:
+                    print(f"    Error generating platform comparison: {e}")
+
+            # Trader statistics charts (time-dependent)
+            try:
+                # Map period to Polymarket time period
+                poly_period = {'1d': 'DAY', '7d': 'WEEK', '30d': 'MONTH', '90d': 'MONTH', 'all': 'ALL'}.get(period_name, 'ALL')
+                fig = self.plot_trader_leaderboard(limit=25, time_period=poly_period, save=False)
+                if fig:
+                    period_charts['trader_leaderboard'] = fig
+            except Exception as e:
+                print(f"    Error generating trader leaderboard chart: {e}")
+
+            try:
+                fig = self.plot_trader_metrics(time_period=poly_period, save=False)
+                if fig:
+                    period_charts['trader_metrics'] = fig
+            except Exception as e:
+                print(f"    Error generating trader metrics chart: {e}")
+            
+            # Store JSON representation of charts for this period
+            charts_data_by_period[period_name] = {
+                name: fig.to_json() for name, fig in period_charts.items()
+            }
+            
+            if period_name == '7d': # Use 7d as the default initial view
+                charts = period_charts
         
         if not charts:
             print("No charts available to combine")
             return None
         
         # Create combined HTML
-        html_content = self._create_dashboard_html(charts)
+        html_content = self._create_dashboard_html(charts, charts_data_by_period)
         
         if save:
             output_file = self.output_dir / filename
@@ -973,8 +1330,13 @@ class StrategyDashboard:
         
         return html_content
     
-    def _create_dashboard_html(self, charts: Dict) -> str:
-        """Create a single HTML file with all charts using tabs."""
+    def _create_dashboard_html(self, charts: Dict, charts_data_by_period: Dict = None) -> str:
+        """Create a single HTML file with all charts using tabs.
+        
+        Args:
+            charts: Dictionary of chart_name -> Plotly figure (default period charts)
+            charts_data_by_period: Dictionary of period_name -> charts dict (for time period filtering)
+        """
         chart_titles = {
             'performance': 'Performance Over Time',
             'comparison': 'Strategy Comparison',
@@ -983,11 +1345,14 @@ class StrategyDashboard:
             'arbitrage': 'Arbitrage Opportunities',
             'market_overview': 'Market Overview',
             'volume': 'Volume Metrics',
-            'platform_comparison': 'Platform Comparison'
+            'platform_comparison': 'Platform Comparison',
+            'trader_leaderboard': 'Top Traders Leaderboard',
+            'trader_metrics': 'Trader Statistics'
         }
         
         chart_order = ['performance', 'comparison', 'signals', 'matching', 'arbitrage',
-                      'market_overview', 'volume', 'platform_comparison']
+                      'market_overview', 'volume', 'platform_comparison',
+                      'trader_leaderboard', 'trader_metrics']
         available_charts = [c for c in chart_order if c in charts]
         
         # Generate HTML for each chart
@@ -1113,6 +1478,35 @@ class StrategyDashboard:
             opacity: 0.9;
         }}
         
+        .time-filter-container {{
+            margin-top: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }}
+        
+        .time-period-select {{
+            padding: 8px 16px;
+            background: #2d2d2d;
+            border: 2px solid #667eea;
+            color: #e0e0e0;
+            border-radius: 6px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }}
+        
+        .time-period-select:hover {{
+            background: #3d3d3d;
+            border-color: #764ba2;
+        }}
+        
+        .time-period-select:focus {{
+            outline: none;
+            border-color: #764ba2;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.3);
+        }}
+        
         .tabs {{
             display: flex;
             gap: 10px;
@@ -1172,6 +1566,16 @@ class StrategyDashboard:
     <div class="header">
         <h1>📊 Trading Strategy Dashboard</h1>
         <p>Interactive visualization of strategy performance and market analysis</p>
+        <div class="time-filter-container">
+            <label for="timePeriod" style="margin-right: 10px; font-size: 1em;">Time Period:</label>
+            <select id="timePeriod" class="time-period-select" onchange="filterByTimePeriod(this.value)">
+                <option value="1d">Last 1 Day</option>
+                <option value="7d" selected>Last 7 Days</option>
+                <option value="30d">Last 30 Days</option>
+                <option value="90d">Last 90 Days</option>
+                <option value="all">All Time</option>
+            </select>
+        </div>
     </div>
     
     {tabs_html}
@@ -1211,6 +1615,43 @@ class StrategyDashboard:
                 }}
             }}
         }});
+        
+        // Time period filtering
+        const timePeriodData = {{
+            '1d': 1,
+            '7d': 7,
+            '30d': 30,
+            '90d': 90,
+            'all': 365
+        }};
+        
+        // Store charts data by period (embedded in page)
+        const chartsByPeriod = {json.dumps(charts_data_by_period) if charts_data_by_period else '{}'};
+        
+        function filterByTimePeriod(period) {{
+            const days = timePeriodData[period] || 7;
+            console.log('Filtering charts by time period:', period, '(', days, 'days)');
+            
+            // Get charts for selected period
+            const periodCharts = chartsByPeriod[period] || {{}};
+            
+            // Update each chart container with the new period's chart
+            Object.keys(periodCharts).forEach(function(chartName) {{
+                const chartContainer = document.getElementById('chart-' + chartName);
+                if (chartContainer && periodCharts[chartName]) {{
+                    // Parse the chart data
+                    try {{
+                        const chartData = JSON.parse(periodCharts[chartName]);
+                        Plotly.newPlot(chartContainer, chartData.data, chartData.layout, chartData.config || {{}});
+                    }} catch(e) {{
+                        console.error('Error updating chart', chartName, ':', e);
+                    }}
+                }}
+            }});
+            
+            // Resize all charts
+            window.dispatchEvent(new Event('resize'));
+        }}
         
     </script>
     {scripts_html}

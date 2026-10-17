@@ -12,6 +12,9 @@ from src.strategies.trading.price_alerts import PriceAlertStrategy, AlertType
 from src.strategies.trading.price_convergence import PriceConvergenceStrategy
 from src.strategies.trading.momentum import MomentumStrategy
 from src.strategies.trading.arbitrage import ArbitrageStrategy, ArbitrageType
+from src.strategies.trading.complete_set import (
+    CompleteSetStrategy, buy_all_yes, sell_all_yes
+)
 from src.core.data_manager import DataManager, MarketData, MatchedMarket
 
 
@@ -405,6 +408,165 @@ class TestArbitrageStrategy:
         assert 'min_spread_profitable' in spread_info
         assert spread_info['kalshi_fee_estimate'] == 0.05  # 10% of 0.50
         assert spread_info['polymarket_gas_cost'] == 0.02
+
+
+def _outcome(platform, market_id, label, ask=None, bid=None, event_id="evt-1",
+             title="Who wins", neg_risk=True, augmented=False,
+             mutually_exclusive=None):
+    raw = {}
+    if platform == "polymarket":
+        raw = {
+            "negRisk": neg_risk,
+            "groupItemTitle": label,
+            "bestAsk": ask,
+            "bestBid": bid,
+            "active": True,
+            "closed": False,
+            "events": [{
+                "id": event_id,
+                "title": title,
+                "negRisk": neg_risk,
+                "negRiskAugmented": augmented,
+                "active": True,
+            }],
+        }
+    else:
+        raw = {
+            "event_ticker": event_id,
+            "event_title": title,
+            "yes_sub_title": label,
+            "mutually_exclusive": mutually_exclusive,
+        }
+    return MarketData(
+        id=market_id,
+        platform=platform,
+        title=title,
+        description="",
+        yes_price=ask,
+        no_price=None,
+        yes_bid=bid if platform == "kalshi" else None,
+        yes_ask=ask if platform == "kalshi" else None,
+        volume=1000,
+        liquidity=None,
+        end_date=None,
+        status="active",
+        category=None,
+        raw_data=raw,
+    )
+
+
+class TestCompleteSetStrategy:
+    """Test mutually exclusive complete-set arbitrage."""
+
+    def test_buys_when_asks_sum_below_one(self, mock_data_manager):
+        markets = [
+            _outcome("polymarket", "a", "Alpha", ask=0.40, bid=0.38),
+            _outcome("polymarket", "b", "Beta", ask=0.30, bid=0.28),
+            _outcome("polymarket", "c", "Gamma", ask=0.20, bid=0.18),
+        ]
+        mock_data_manager.get_all_markets.side_effect = (
+            lambda platform: markets if platform == "polymarket" else []
+        )
+
+        strategy = CompleteSetStrategy(mock_data_manager, min_net_profit=0.01)
+        signals = strategy.analyze()
+
+        assert len(signals) == 1
+        signal = signals[0]
+        assert signal.signal_type == SignalType.BUY
+        assert signal.metadata["direction"] == "buy_all_yes"
+        assert signal.metadata["price_sum"] == pytest.approx(0.90)
+        assert signal.metadata["net_profit"] == pytest.approx(0.10)
+        assert [leg["market_id"] for leg in signal.metadata["legs"]] == ["a", "b", "c"]
+
+    def test_sells_when_bids_sum_above_one(self, mock_data_manager):
+        markets = [
+            _outcome("polymarket", "a", "Alpha", ask=0.55, bid=0.50),
+            _outcome("polymarket", "b", "Beta", ask=0.45, bid=0.40),
+            _outcome("polymarket", "c", "Gamma", ask=0.25, bid=0.20),
+        ]
+        mock_data_manager.get_all_markets.side_effect = (
+            lambda platform: markets if platform == "polymarket" else []
+        )
+
+        strategy = CompleteSetStrategy(mock_data_manager, min_net_profit=0.01)
+        signals = strategy.analyze()
+
+        assert len(signals) == 1
+        assert signals[0].signal_type == SignalType.SELL
+        assert signals[0].metadata["price_sum"] == pytest.approx(1.10)
+        assert signals[0].metadata["net_profit"] == pytest.approx(0.10)
+
+    def test_ignores_a_fair_set(self, mock_data_manager):
+        markets = [
+            _outcome("polymarket", "a", "Alpha", ask=0.50, bid=0.49),
+            _outcome("polymarket", "b", "Beta", ask=0.50, bid=0.49),
+        ]
+        mock_data_manager.get_all_markets.side_effect = (
+            lambda platform: markets if platform == "polymarket" else []
+        )
+
+        strategy = CompleteSetStrategy(mock_data_manager, min_net_profit=0.01)
+        assert strategy.analyze() == []
+
+    def test_skips_augmented_events_and_incomplete_books(self, mock_data_manager):
+        augmented = [
+            _outcome("polymarket", "a", "Alpha", ask=0.20, bid=0.10, augmented=True),
+            _outcome("polymarket", "b", "Beta", ask=0.20, bid=0.10, augmented=True),
+        ]
+        missing_ask = [
+            _outcome("polymarket", "c", "Alpha", ask=0.20, bid=0.10, event_id="evt-2"),
+            _outcome("polymarket", "d", "Beta", ask=None, bid=0.10, event_id="evt-2"),
+        ]
+        mock_data_manager.get_all_markets.side_effect = (
+            lambda platform: (augmented + missing_ask) if platform == "polymarket" else []
+        )
+
+        strategy = CompleteSetStrategy(mock_data_manager, min_net_profit=0.01)
+        assert strategy.analyze() == []
+
+    def test_kalshi_requires_mutually_exclusive_and_clears_worst_case_fee(self, mock_data_manager):
+        exclusive = [
+            _outcome("kalshi", "A", "Alpha", ask=0.40, bid=0.39,
+                     event_id="RACE", mutually_exclusive=True),
+            _outcome("kalshi", "B", "Beta", ask=0.35, bid=0.34,
+                     event_id="RACE", mutually_exclusive=True),
+            _outcome("kalshi", "C", "Gamma", ask=0.15, bid=0.14,
+                     event_id="RACE", mutually_exclusive=True),
+        ]
+        ladder = [
+            _outcome("kalshi", "L1", "Above 3", ask=0.20, bid=0.19,
+                     event_id="CPI", title="CPI", mutually_exclusive=False),
+            _outcome("kalshi", "L2", "Above 4", ask=0.20, bid=0.19,
+                     event_id="CPI", title="CPI", mutually_exclusive=False),
+        ]
+        mock_data_manager.get_all_markets.side_effect = (
+            lambda platform: (exclusive + ladder) if platform == "kalshi" else []
+        )
+
+        strategy = CompleteSetStrategy(
+            mock_data_manager, min_net_profit=0.01, kalshi_fee_rate=0.10
+        )
+        signals = strategy.analyze()
+
+        assert len(signals) == 1
+        assert signals[0].platform == "kalshi"
+        assert signals[0].market_id == "RACE"
+        # Gross 0.10, worst-case fee is 10% of the cheapest contract's payout.
+        assert signals[0].metadata["gross_profit"] == pytest.approx(0.10)
+        assert signals[0].metadata["fees"] == pytest.approx(0.085)
+        assert signals[0].metadata["net_profit"] == pytest.approx(0.015)
+
+    def test_fee_helpers(self):
+        gross, fees, net = buy_all_yes([0.40, 0.35, 0.15], fee_rate=0.10, fixed_per_leg=0)
+        assert gross == pytest.approx(0.10)
+        assert fees == pytest.approx(0.085)
+        assert net == pytest.approx(0.015)
+
+        gross, fees, net = sell_all_yes([0.50, 0.40, 0.20], fee_rate=0.10, fixed_per_leg=0)
+        assert gross == pytest.approx(0.10)
+        assert fees == pytest.approx(0.09)
+        assert net == pytest.approx(0.01)
 
 
 class TestTradeExecution:

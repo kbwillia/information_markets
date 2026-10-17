@@ -69,7 +69,7 @@ def parse_args():
         type=str,
         default='all',
         help='Comma-separated list of strategies to run (default: all). '
-             'Options: lead_lag, volume_spike, price_alerts, price_convergence, momentum, arbitrage'
+             'Options: lead_lag, volume_spike, price_alerts, price_convergence, momentum, arbitrage, complete_set'
     )
     
     parser.add_argument(
@@ -115,8 +115,8 @@ def setup_runner(args) -> StrategyRunner:
     
     # Add strategies
     if args.strategies == 'all':
-        strategies = ['lead_lag', 'volume_spike', 'price_alerts', 
-                     'price_convergence', 'momentum', 'arbitrage']
+        strategies = ['lead_lag', 'volume_spike', 'price_alerts',
+                     'price_convergence', 'momentum', 'arbitrage', 'complete_set']
     else:
         strategies = [s.strip() for s in args.strategies.split(',')]
     

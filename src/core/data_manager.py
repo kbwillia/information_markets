@@ -119,6 +119,10 @@ class DataManager:
         self._semantic_model: Optional[SentenceTransformer] = None
         self._semantic_model_name = semantic_model
         self._embedding_cache: Dict[str, np.ndarray] = {}  # Cache embeddings
+
+        # Kalshi puts mutually_exclusive on the event, not the market.
+        self._exclusive_event_tickers: set = set()
+        self._exclusive_events_fetched_at: float = 0.0
     
     @property
     def kalshi(self) -> KalshiClient:
@@ -279,10 +283,83 @@ class DataManager:
             print("Skipping Kalshi refresh: client not available (check API keys in .env)")
             return
         try:
-            response = self.kalshi.get_markets(limit=200)
-            markets = response.get('markets', []) if isinstance(response, dict) else []
+            # Kalshi API has a hard limit of 1000 per request, so we need pagination
+            # Filter for open markets only (active markets)
+            all_markets = []
+            limit_per_page = 1000  # API max is 1000
+            cursor = None
+            max_pages = 20  # Safety limit
+            
+            print(f"Fetching Kalshi markets with pagination (max {max_pages} pages)...")
+            
+            for page in range(max_pages):
+                response = self.kalshi.get_markets(
+                    limit=limit_per_page,
+                    cursor=cursor,
+                    status='open'  # Only get open markets
+                )
+                
+                page_markets = response.get('markets', []) if isinstance(response, dict) else []
+                
+                if not page_markets:
+                    break  # No more markets
+                
+                all_markets.extend(page_markets)
+                print(f"  Page {page + 1}: Fetched {len(page_markets)} markets (total: {len(all_markets)})")
+                
+                # Get cursor for next page
+                cursor = response.get('cursor') if isinstance(response, dict) else None
+                if not cursor:
+                    break  # No more pages
+                
+                # If we got fewer than the limit, we've reached the end
+                if len(page_markets) < limit_per_page:
+                    break
+            
+            markets = all_markets
             
             if markets:
+                # Filter markets to only include those closing in the future (at least 1 day from now)
+                # This ensures we get recent/active markets, not old settled ones
+                min_close_date = datetime.now() + timedelta(days=1)
+                filtered_markets = []
+                
+                for m in markets:
+                    # Check close time
+                    close_time_str = m.get('close_time') or m.get('closeTime')
+                    if close_time_str:
+                        try:
+                            # Parse close time (handle various formats)
+                            if isinstance(close_time_str, str):
+                                # Try ISO format first
+                                try:
+                                    close_time = datetime.fromisoformat(close_time_str.replace('Z', '+00:00'))
+                                except:
+                                    # Try other formats
+                                    try:
+                                        from dateutil import parser
+                                        close_time = parser.parse(close_time_str)
+                                    except:
+                                        # If parsing fails, include the market anyway
+                                        filtered_markets.append(m)
+                                        continue
+                            else:
+                                # If not a string, include it
+                                filtered_markets.append(m)
+                                continue
+                            
+                            # Only include markets closing in the future (at least 1 day from now)
+                            if close_time > min_close_date:
+                                filtered_markets.append(m)
+                        except Exception:
+                            # If we can't parse the date, include the market anyway (better to have it than miss it)
+                            filtered_markets.append(m)
+                    else:
+                        # If no close time, include it (might be a new market)
+                        filtered_markets.append(m)
+                
+                markets = filtered_markets
+                self._stamp_mutually_exclusive(markets)
                 self.cache.set('kalshi', 'markets', markets)
                 
                 # Cache individual markets and record prices
@@ -302,8 +379,13 @@ class DataManager:
                             
                             self.cache.set('kalshi', 'price', 
                                           {'yes_price': price}, identifier=ticker)
-                            self.cache.record_price(ticker, 'kalshi', price,
-                                                   m.get('volume'))
+                            
+                            # Try multiple volume fields (volume, volume_24h, total_volume)
+                            volume = (self._safe_volume(m.get('volume')) or 
+                                     self._safe_volume(m.get('volume_24h')) or
+                                     self._safe_volume(m.get('total_volume')))
+                            if volume is not None and volume > 0:
+                                self.cache.record_price(ticker, 'kalshi', price, volume)
                             
                             if old_price and abs(price - old_price) > 0.001:
                                 self._notify_price_update('kalshi', ticker, 
@@ -312,6 +394,51 @@ class DataManager:
             print(f"Refreshed {len(markets)} Kalshi markets")
         except Exception as e:
             print(f"Error refreshing Kalshi: {e}")
+
+    def _exclusive_kalshi_event_tickers(self) -> set:
+        """Event tickers where exactly one market can resolve yes."""
+        now = time.time()
+        if self._exclusive_event_tickers and now - self._exclusive_events_fetched_at < 600:
+            return self._exclusive_event_tickers
+
+        tickers = set()
+        cursor = None
+        try:
+            for _ in range(40):
+                response = self.kalshi.get_events(
+                    limit=200,
+                    cursor=cursor,
+                    status='open',
+                    with_nested_markets=False,
+                )
+                events = response.get('events') or []
+                for event in events:
+                    if event.get('mutually_exclusive') is True and event.get('event_ticker'):
+                        tickers.add(event['event_ticker'])
+                cursor = response.get('cursor')
+                if not cursor or not events:
+                    break
+        except Exception as e:
+            print(f"Could not load Kalshi mutually exclusive events: {e}")
+            return self._exclusive_event_tickers
+
+        self._exclusive_event_tickers = tickers
+        self._exclusive_events_fetched_at = now
+        print(f"Loaded {len(tickers)} mutually exclusive Kalshi events")
+        return tickers
+
+    def _stamp_mutually_exclusive(self, markets: List[Dict]):
+        """Copy the event-level exclusive flag onto each cached market."""
+        try:
+            exclusive = self._exclusive_kalshi_event_tickers()
+        except Exception as e:
+            print(f"Could not stamp mutually exclusive Kalshi markets: {e}")
+            return
+        if not exclusive:
+            return
+        for market in markets:
+            if market.get('event_ticker') in exclusive:
+                market['mutually_exclusive'] = True
     
     def _refresh_polymarket_markets(self):
         """Refresh Polymarket market data."""
@@ -319,16 +446,88 @@ class DataManager:
             print("Skipping Polymarket refresh: client not available")
             return
         try:
-            response = self.polymarket.get_markets(limit=200)
-            # Handle different response formats
-            if isinstance(response, list):
-                markets = response
-            elif isinstance(response, dict):
-                markets = response.get('markets', response.get('data', []))
-            else:
-                markets = []
+            # Polymarket API has a max limit of 500 per request, so we need pagination
+            # Filter for active markets only and those ending in the future
+            min_end_date = datetime.now() + timedelta(days=1)
+            all_markets = []
+            limit_per_page = 500  # API max is 500 per request
+            offset = 0
+            max_pages = 40  # Safety limit (40 * 500 = 20,000 markets max)
+            
+            print(f"Fetching Polymarket markets with pagination (max {max_pages} pages)...")
+            
+            for page in range(max_pages):
+                response = self.polymarket.get_markets(
+                    limit=limit_per_page,
+                    offset=offset,
+                    active=True,  # Only active markets
+                    closed=False  # Not closed
+                    # Note: end_date_min filtering done client-side after fetching
+                )
+                
+                # Handle different response formats
+                if isinstance(response, list):
+                    page_markets = response
+                elif isinstance(response, dict):
+                    page_markets = response.get('markets', response.get('data', []))
+                else:
+                    page_markets = []
+                
+                if not page_markets:
+                    break  # No more markets
+                
+                all_markets.extend(page_markets)
+                print(f"  Page {page + 1}: Fetched {len(page_markets)} markets (total: {len(all_markets)})")
+                
+                # If we got fewer than the limit, we've reached the end
+                if len(page_markets) < limit_per_page:
+                    break
+                
+                offset += limit_per_page
+            
+            markets = all_markets
             
             if markets:
+                # Filter markets to only include those ending in the future (at least 1 day from now)
+                # This ensures we get recent/active markets, not old settled ones
+                min_end_date = datetime.now() + timedelta(days=1)
+                filtered_markets = []
+                
+                for m in markets:
+                    # Check end date
+                    end_date_str = m.get('endDate') or m.get('end_date')
+                    if end_date_str:
+                        try:
+                            # Parse end date (handle various formats)
+                            if isinstance(end_date_str, str):
+                                # Try ISO format first
+                                try:
+                                    end_date = datetime.fromisoformat(end_date_str.replace('Z', '+00:00'))
+                                except:
+                                    # Try other formats
+                                    try:
+                                        from dateutil import parser
+                                        end_date = parser.parse(end_date_str)
+                                    except:
+                                        # If parsing fails, include the market anyway
+                                        filtered_markets.append(m)
+                                        continue
+                            else:
+                                # If not a string, include it
+                                filtered_markets.append(m)
+                                continue
+                            
+                            # Only include markets ending in the future (at least 1 day from now)
+                            if end_date > min_end_date:
+                                filtered_markets.append(m)
+                        except Exception:
+                            # If we can't parse the date, include the market anyway (better to have it than miss it)
+                            filtered_markets.append(m)
+                    else:
+                        # If no end date, include it (might be a new market)
+                        filtered_markets.append(m)
+                
+                markets = filtered_markets
                 self.cache.set('polymarket', 'markets', markets)
                 
                 # Cache individual markets and record prices
@@ -366,8 +565,9 @@ class DataManager:
                             
                             self.cache.set('polymarket', 'price',
                                           {'yes_price': price}, identifier=market_id)
-                            self.cache.record_price(market_id, 'polymarket', price,
-                                                   m.get('volume'))
+                            volume = self._safe_volume(m.get('volume'))
+                            if volume is not None:
+                                self.cache.record_price(market_id, 'polymarket', price, volume)
                             
                             if old_price and abs(price - old_price) > 0.001:
                                 self._notify_price_update('polymarket', market_id,
@@ -634,6 +834,45 @@ class DataManager:
     def _normalize_market(self, raw: Dict, platform: str) -> MarketData:
         """Convert raw API response to MarketData."""
         if platform == 'kalshi':
+            # Extract category - try multiple sources
+            category = raw.get('category')
+            if not category or category == 'Uncategorized':
+                # Try to infer from event_ticker (e.g., "KXMVESPORTS..." -> "Sports")
+                event_ticker = raw.get('event_ticker', '')
+                if event_ticker:
+                    # Parse event ticker prefix to get category
+                    # Format: KXMVESPORTS... -> Sports, KXMVEECONOMICS... -> Economics, etc.
+                    ticker_upper = event_ticker.upper()
+                # Check for common category patterns in event ticker
+                if 'SPORTS' in ticker_upper:
+                    category = 'Sports'
+                elif 'ECONOMICS' in ticker_upper or 'ECON' in ticker_upper:
+                    category = 'Economics'
+                elif 'POLITICS' in ticker_upper or 'POL' in ticker_upper or 'ELECTION' in ticker_upper:
+                    category = 'Politics'
+                elif 'WEATHER' in ticker_upper:
+                    category = 'Weather'
+                elif 'ENTERTAINMENT' in ticker_upper or 'ENT' in ticker_upper:
+                    category = 'Entertainment'
+                elif 'CRYPTO' in ticker_upper or 'CRYPTOCURRENCY' in ticker_upper or 'BITCOIN' in ticker_upper:
+                    category = 'Crypto'
+                elif 'STOCKS' in ticker_upper or 'STOCK' in ticker_upper or 'EQUITY' in ticker_upper:
+                    category = 'Stocks'
+                elif 'COMMODITIES' in ticker_upper or 'COMMODITY' in ticker_upper:
+                    category = 'Commodities'
+                elif 'FED' in ticker_upper or 'FEDERAL' in ticker_upper or 'INTEREST' in ticker_upper:
+                    category = 'Economics'
+                elif 'JOBS' in ticker_upper or 'EMPLOYMENT' in ticker_upper or 'UNEMPLOYMENT' in ticker_upper:
+                    category = 'Economics'
+                elif 'CPI' in ticker_upper or 'INFLATION' in ticker_upper or 'PRICE' in ticker_upper:
+                    category = 'Economics'
+                elif 'GDP' in ticker_upper:
+                    category = 'Economics'
+                else:
+                    category = category or 'Uncategorized'
+            else:
+                category = category or 'Uncategorized'
+            
             return MarketData(
                 id=raw.get('ticker', ''),
                 platform=platform,
@@ -647,7 +886,7 @@ class DataManager:
                 liquidity=raw.get('open_interest'),
                 end_date=raw.get('close_time'),
                 status=raw.get('status', 'active'),
-                category=raw.get('category'),
+                category=category,
                 raw_data=raw
             )
         else:  # polymarket
@@ -684,6 +923,94 @@ class DataManager:
             if yes_price is None:
                 yes_price = self._safe_price(raw.get('yes_price') or raw.get('price'), platform)
             
+            # Extract category for Polymarket - try multiple sources
+            category = raw.get('category')
+            if not category:
+                # Check events array for category information
+                events = raw.get('events', [])
+                if events and isinstance(events, list) and len(events) > 0:
+                    event = events[0]
+                    # Try to infer from event title/slug (common patterns)
+                    event_title = (event.get('title', '') or '').lower()
+                    event_slug = (event.get('slug', '') or '').lower()
+                    combined_text = f"{event_title} {event_slug}"
+                    
+                    # Check for category keywords in title/slug
+                    if any(word in combined_text for word in ['trump', 'biden', 'election', 'president', 'senate', 'congress', 'politics', 'political']):
+                        category = 'Politics'
+                    elif any(word in combined_text for word in ['bitcoin', 'crypto', 'ethereum', 'cryptocurrency', 'btc', 'eth']):
+                        category = 'Crypto'
+                    elif any(word in combined_text for word in ['sports', 'nfl', 'nba', 'mlb', 'soccer', 'football', 'basketball', 'baseball']):
+                        category = 'Sports'
+                    elif any(word in combined_text for word in ['stock', 'sp500', 'nasdaq', 'dow', 'equity', 'market']):
+                        category = 'Stocks'
+                    elif any(word in combined_text for word in ['economy', 'gdp', 'inflation', 'unemployment', 'jobs', 'fed', 'interest']):
+                        category = 'Economics'
+                    elif any(word in combined_text for word in ['weather', 'temperature', 'hurricane', 'storm']):
+                        category = 'Weather'
+                    elif any(word in combined_text for word in ['entertainment', 'movie', 'tv', 'celebrity', 'oscar']):
+                        category = 'Entertainment'
+                    
+                    # Check for tags in event (if available in full event data)
+                    if not category:
+                        tags = event.get('tags', [])
+                        if tags and isinstance(tags, list) and len(tags) > 0:
+                            tag = tags[0]
+                            if isinstance(tag, dict):
+                                category = tag.get('label') or tag.get('slug', '')
+                            elif isinstance(tag, str):
+                                category = tag
+                    
+                    # Check for categories in event
+                    if not category:
+                        categories = event.get('categories', [])
+                        if categories and isinstance(categories, list) and len(categories) > 0:
+                            cat = categories[0]
+                            if isinstance(cat, dict):
+                                category = cat.get('label') or cat.get('slug', '')
+                            elif isinstance(cat, str):
+                                category = cat
+                    
+                    # Check series for tags/categories (series often has more complete metadata)
+                    if not category:
+                        series_list = event.get('series', [])
+                        if series_list and isinstance(series_list, list) and len(series_list) > 0:
+                            series = series_list[0]
+                            # Try series title/slug
+                            series_title = (series.get('title', '') or '').lower()
+                            series_slug = (series.get('slug', '') or '').lower()
+                            series_text = f"{series_title} {series_slug}"
+                            
+                            if any(word in series_text for word in ['trump', 'biden', 'election', 'president', 'politics']):
+                                category = 'Politics'
+                            elif any(word in series_text for word in ['bitcoin', 'crypto', 'ethereum']):
+                                category = 'Crypto'
+                            elif any(word in series_text for word in ['sports', 'nfl', 'nba']):
+                                category = 'Sports'
+                            
+                            # Check series tags
+                            if not category:
+                                series_tags = series.get('tags', [])
+                                if series_tags and isinstance(series_tags, list) and len(series_tags) > 0:
+                                    tag = series_tags[0]
+                                    if isinstance(tag, dict):
+                                        category = tag.get('label') or tag.get('slug', '')
+                                    elif isinstance(tag, str):
+                                        category = tag
+                            
+                            # Check series categories
+                            if not category:
+                                series_cats = series.get('categories', [])
+                                if series_cats and isinstance(series_cats, list) and len(series_cats) > 0:
+                                    cat = series_cats[0]
+                                    if isinstance(cat, dict):
+                                        category = cat.get('label') or cat.get('slug', '')
+                                    elif isinstance(cat, str):
+                                        category = cat
+                
+                # Fallback to Uncategorized
+                category = category or 'Uncategorized'
+            
             return MarketData(
                 id=raw.get('id') or raw.get('condition_id', ''),
                 platform=platform,
@@ -693,11 +1020,11 @@ class DataManager:
                 no_price=no_price,
                 yes_bid=None,  # Need orderbook for this
                 yes_ask=None,
-                volume=raw.get('volume'),
-                liquidity=raw.get('liquidity'),
+                volume=self._safe_volume(raw.get('volume')),
+                liquidity=self._safe_volume(raw.get('liquidity')),
                 end_date=raw.get('endDate'),
                 status=raw.get('active', True) and 'active' or 'closed',
-                category=raw.get('category'),
+                category=category,
                 raw_data=raw
             )
     
@@ -725,6 +1052,27 @@ class DataManager:
         if platform == 'kalshi' and price > 1:
             return price / 100  # Kalshi uses cents
         return price
+    
+    def _safe_volume(self, volume) -> Optional[float]:
+        """Safely convert volume to float."""
+        if volume is None:
+            return None
+        
+        # Handle string representations
+        if isinstance(volume, str):
+            # Skip if it looks like a list or other invalid format
+            volume_str = volume.strip()
+            if not volume_str or volume_str[0] in ['[', '{', '(']:
+                return None
+            try:
+                return float(volume_str)
+            except (ValueError, TypeError):
+                return None
+        else:
+            try:
+                return float(volume)
+            except (ValueError, TypeError):
+                return None
     
     def _extract_price_from_orderbook(self, orderbook: Dict, 
                                       platform: str) -> Optional[float]:

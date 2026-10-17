@@ -163,6 +163,59 @@ class KalshiClient:
             else:
                 raise Exception(f"Error getting markets: {e}")
     
+    def get_events(self, limit: int = 200, cursor: str = None, status: str = "open",
+                   with_nested_markets: bool = False) -> Dict:
+        """Get events. mutually_exclusive is on the event, not the market."""
+        kwargs = {
+            "limit": limit,
+            "with_nested_markets": with_nested_markets,
+        }
+        if cursor:
+            kwargs["cursor"] = cursor
+        if status:
+            kwargs["status"] = status
+        try:
+            response = self.client.get_events(**kwargs)
+            return self._plain(response)
+        except Exception as e:
+            error_str = str(e).lower()
+            if "validation" not in error_str and "string_type" not in error_str and "int_type" not in error_str:
+                raise Exception(f"Error getting events: {e}")
+            try:
+                import json
+                from kalshi_python_sync.api.events_api import EventsApi
+
+                events_api = EventsApi(self.client)
+                raw = events_api.get_events_without_preload_content(**kwargs)
+                data = json.loads(raw.data)
+                return data if isinstance(data, dict) else {"events": [], "cursor": None}
+            except Exception as fallback_error:
+                raise Exception(f"Error getting events: {fallback_error}")
+
+    def _plain(self, response) -> Dict:
+        """Convert an SDK response into a dict of plain dicts."""
+        if isinstance(response, dict):
+            data = response
+        elif hasattr(response, "to_dict"):
+            data = response.to_dict()
+        elif hasattr(response, "model_dump"):
+            data = response.model_dump()
+        else:
+            return {"events": [], "cursor": None}
+        if not isinstance(data, dict):
+            return {"events": [], "cursor": None}
+        events = data.get("events") or []
+        plain_events = []
+        for event in events:
+            if hasattr(event, "to_dict"):
+                event = event.to_dict()
+            elif hasattr(event, "model_dump"):
+                event = event.model_dump()
+            if isinstance(event, dict):
+                plain_events.append(event)
+        data["events"] = plain_events
+        return data
+
     def get_market(self, ticker: str) -> Dict:
         """Get specific market by ticker."""
         try:

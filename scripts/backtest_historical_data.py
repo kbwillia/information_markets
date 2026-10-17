@@ -112,7 +112,7 @@ def run_backtest(data_manager: DataManager, days: int = 7,
     
     # Add strategies
     if strategies is None:
-        strategies = ['arbitrage', 'momentum', 'lead_lag', 'price_convergence']
+        strategies = ['arbitrage', 'complete_set', 'momentum', 'lead_lag', 'price_convergence']
     
     for strategy_name in strategies:
         try:

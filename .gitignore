@@ -39,9 +39,18 @@ wheels/
 data/
 logs/
 *.log
+*.csv
+*.json
+*.jsonl
+!frontend/package.json
+!frontend/package-lock.json
 *.db
 *.sqlite
 *.sqlite3
+
+# Web app
+frontend/node_modules/
+frontend/dist/
 
 # Jupyter
 .ipynb_checkpoints/

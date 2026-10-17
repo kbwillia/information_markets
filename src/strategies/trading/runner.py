@@ -23,6 +23,8 @@ from src.strategies.trading.price_alerts import PriceAlertStrategy
 from src.strategies.trading.price_convergence import PriceConvergenceStrategy
 from src.strategies.trading.momentum import MomentumStrategy
 from src.strategies.trading.arbitrage import ArbitrageStrategy
+from src.strategies.trading.complete_set import CompleteSetStrategy
+from src.strategies.trading.copy_top_traders import CopyTopTradersStrategy
 from src.config import Config
 
 
@@ -134,7 +136,9 @@ class StrategyRunner:
             'price_alerts': PriceAlertStrategy,
             'price_convergence': PriceConvergenceStrategy,
             'momentum': MomentumStrategy,
-            'arbitrage': ArbitrageStrategy
+            'arbitrage': ArbitrageStrategy,
+            'complete_set': CompleteSetStrategy,
+            'copy_top_traders': CopyTopTradersStrategy
         }
         
         cls = strategy_classes.get(config.name)
@@ -388,6 +392,14 @@ def create_default_runner(paper_trading: bool = True) -> StrategyRunner:
     runner.add_strategy('arbitrage', enabled=True, weight=1.5,
                        min_net_profit=0.01, kalshi_fee_rate=0.10,
                        polymarket_gas_cost=0.02)
+    runner.add_strategy('complete_set', enabled=True, weight=1.5,
+                       max_signals=20, min_net_profit=0.01,
+                       kalshi_fee_rate=0.10, polymarket_cost_per_leg=0.0)
+    # Copy top traders - follow the best performers
+    runner.add_strategy('copy_top_traders', enabled=True, weight=1.0,
+                       top_traders_count=10, min_trader_pnl=1000.0,
+                       min_trader_volume=10000.0, lookback_hours=24,
+                       min_confidence=0.6, time_period='ALL')
     
     return runner
 

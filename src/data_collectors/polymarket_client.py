@@ -46,16 +46,33 @@ class PolymarketClient:
             print(f"Response text (first 500 chars): {response.text[:500]}")
             return {}
     
-    def get_markets(self, limit: int = 100, offset: int = 0) -> Dict:
-        """Get available markets."""
+    def get_markets(self, limit: int = 100, offset: int = 0, active: bool = True, 
+                    closed: bool = False, end_date_min: str = None) -> Dict:
+        """Get available markets.
+        
+        Args:
+            limit: Number of markets to return
+            offset: Pagination offset
+            active: Filter for active markets (default: True)
+            closed: Filter for closed markets (default: False)
+            end_date_min: Minimum end date (ISO format) - markets ending after this date
+        """
         # Gamma API is the correct API for market listings
         original_url = self.base_url
         try:
             self.use_gamma_api()
-            result = self._request("GET", "/markets", {
+            params = {
                 "limit": limit,
                 "offset": offset
-            })
+            }
+            if active is not None:
+                params["active"] = str(active).lower()
+            if closed is not None:
+                params["closed"] = str(closed).lower()
+            if end_date_min:
+                params["end_date_min"] = end_date_min
+            
+            result = self._request("GET", "/markets", params)
             # Polymarket Gamma API may return list directly or dict with 'data'
             if isinstance(result, list):
                 return {'markets': result, 'data': result}
@@ -448,14 +465,28 @@ class PolymarketClient:
         finally:
             self.base_url = original_url
     
-    def get_leaderboard(self, limit: int = 100, offset: int = 0) -> Dict:
-        """Get the top-performing traders by PnL (Profit and Loss)."""
+    def get_leaderboard(self, limit: int = 100, offset: int = 0, 
+                       category: str = "OVERALL", time_period: str = "ALL",
+                       order_by: str = "PNL") -> Dict:
+        """Get the top-performing traders by PnL (Profit and Loss).
+        
+        Args:
+            limit: Number of traders to return (max 50)
+            offset: Pagination offset
+            category: Leaderboard category (OVERALL, etc.)
+            time_period: Time period (DAY, WEEK, MONTH, ALL)
+            order_by: Sort by PNL or VOL
+        """
         original_url = self.base_url
         self.use_data_api()
         try:
-            return self._request("GET", "/leaderboard", {
-                "limit": limit,
-                "offset": offset
+            # Use v1 leaderboard endpoint with proper parameters
+            return self._request("GET", "/v1/leaderboard", {
+                "limit": min(limit, 50),  # API max is 50
+                "offset": offset,
+                "category": category,
+                "timePeriod": time_period,
+                "orderBy": order_by
             })
         finally:
             self.base_url = original_url

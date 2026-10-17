@@ -102,7 +102,8 @@ class TestCreateDefaultRunner:
             'price_alerts',
             'price_convergence',
             'momentum',
-            'arbitrage'
+            'arbitrage',
+            'complete_set',
         ]
         
         for strategy in expected_strategies:
