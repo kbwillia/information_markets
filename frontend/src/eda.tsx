@@ -1,3 +1,11 @@
+import type { ReactNode } from "react";
+
+type Loose = Record<string, any>;
+type ChartRow = Record<string, any>;
+type SeriesItem = { key: string; label?: string; color: string };
+type LineSeries = { name: string; color: string; points: { y: number | null }[] };
+type CalRow = { label: string; actual: number | null; count: number; midpoint: number };
+
 const COLORS = {
   accent: "#7eb6ff",
   good: "#6dcaa0",
@@ -7,18 +15,32 @@ const COLORS = {
   muted: "#8b98a8",
 };
 
-function num(value) {
+function rowsOf(value: unknown): ChartRow[] {
+  return Array.isArray(value) ? (value as ChartRow[]) : [];
+}
+
+function num(value: unknown): number | null {
   const number = Number(value);
   return Number.isFinite(number) ? number : null;
 }
 
-function pct(value) {
+function pct(value: unknown): string {
   const number = num(value);
   if (number === null) return "--";
   return `${(number * 100).toFixed(1)}%`;
 }
 
-function ChartCard({ title, note, children, wide }) {
+function ChartCard({
+  title,
+  note,
+  children,
+  wide,
+}: {
+  title: string;
+  note?: string;
+  children: ReactNode;
+  wide?: boolean;
+}) {
   return (
     <section className={wide ? "panel chart-card wide" : "panel chart-card"}>
       <h2>{title}</h2>
@@ -28,7 +50,7 @@ function ChartCard({ title, note, children, wide }) {
   );
 }
 
-function axisTicks(min, max, count = 4) {
+function axisTicks(min: number, max: number, count = 4): number[] {
   if (min === max) return [min];
   const ticks = [];
   for (let index = 0; index < count; index += 1) {
@@ -37,7 +59,7 @@ function axisTicks(min, max, count = 4) {
   return ticks;
 }
 
-function formatTick(value, mode) {
+function formatTick(value: number, mode?: string): string {
   if (mode === "pct") return `${Math.round(value * 100)}%`;
   if (mode === "roi") return `${Math.round(value * 100)}%`;
   if (mode === "money") return value.toFixed(1);
@@ -45,7 +67,17 @@ function formatTick(value, mode) {
   return value.toFixed(1);
 }
 
-function BarChart({ rows, series, yMode = "number", ariaLabel }) {
+function BarChart({
+  rows,
+  series,
+  yMode = "number",
+  ariaLabel,
+}: {
+  rows: ChartRow[];
+  series: SeriesItem[];
+  yMode?: string;
+  ariaLabel: string;
+}) {
   const width = 640;
   const height = 280;
   const pad = { left: 48, right: 12, top: 16, bottom: 64 };
@@ -55,7 +87,7 @@ function BarChart({ rows, series, yMode = "number", ariaLabel }) {
   const min = Math.min(0, ...values, 0);
   const max = Math.max(0, ...values, 0.01);
   const span = max - min || 1;
-  const yOf = (value) => pad.top + ((max - value) / span) * innerH;
+  const yOf = (value: number) => pad.top + ((max - value) / span) * innerH;
   const zero = yOf(0);
   const groupW = innerW / Math.max(rows.length, 1);
   const barW = Math.min(18, (groupW * 0.8) / series.length);
@@ -97,7 +129,7 @@ function BarChart({ rows, series, yMode = "number", ariaLabel }) {
   );
 }
 
-function Legend({ series }) {
+function Legend({ series }: { series: SeriesItem[] }) {
   return (
     <div className="legend">
       {series.map((item) => (
@@ -110,7 +142,17 @@ function Legend({ series }) {
   );
 }
 
-function LineChart({ series, yMode = "number", ariaLabel, xLabels }) {
+function LineChart({
+  series,
+  yMode = "number",
+  ariaLabel,
+  xLabels,
+}: {
+  series: LineSeries[];
+  yMode?: string;
+  ariaLabel: string;
+  xLabels?: string[];
+}) {
   const width = 640;
   const height = 280;
   const pad = { left: 52, right: 12, top: 16, bottom: 36 };
@@ -121,8 +163,8 @@ function LineChart({ series, yMode = "number", ariaLabel, xLabels }) {
   const max = Math.max(...values, 0.01);
   const span = max - min || 1;
   const count = Math.max(...series.map((item) => item.points.length), 1);
-  const xOf = (index) => pad.left + (count === 1 ? innerW / 2 : (index / (count - 1)) * innerW);
-  const yOf = (value) => pad.top + ((max - value) / span) * innerH;
+  const xOf = (index: number) => pad.left + (count === 1 ? innerW / 2 : (index / (count - 1)) * innerW);
+  const yOf = (value: number) => pad.top + ((max - value) / span) * innerH;
   const labels = xLabels || [];
   const labelStep = Math.max(1, Math.ceil(labels.length / 6));
 
@@ -159,14 +201,14 @@ function LineChart({ series, yMode = "number", ariaLabel, xLabels }) {
   );
 }
 
-function CalibrationChart({ series }) {
+function CalibrationChart({ series }: { series: { name: string; color: string; rows: CalRow[] }[] }) {
   const width = 640;
   const height = 320;
   const pad = { left: 44, right: 16, top: 16, bottom: 36 };
   const innerW = width - pad.left - pad.right;
   const innerH = height - pad.top - pad.bottom;
-  const xOf = (value) => pad.left + value * innerW;
-  const yOf = (value) => pad.top + (1 - value) * innerH;
+  const xOf = (value: number) => pad.left + value * innerW;
+  const yOf = (value: number) => pad.top + (1 - value) * innerH;
   const ticks = [0, 0.5, 1];
 
   return (
@@ -184,7 +226,7 @@ function CalibrationChart({ series }) {
       ))}
       <line x1={xOf(0)} y1={yOf(0)} x2={xOf(1)} y2={yOf(1)} className="diagonal" />
       {series.map((item) => {
-        const dots = item.rows.filter((row) => row.actual !== null && row.count > 0);
+        const dots = item.rows.filter((row): row is CalRow & { actual: number } => row.actual !== null && row.count > 0);
         const points = dots.map((row) => `${xOf(row.midpoint)},${yOf(row.actual)}`).join(" ");
         return (
           <g key={item.name}>
@@ -199,7 +241,21 @@ function CalibrationChart({ series }) {
   );
 }
 
-function HBar({ rows, valueKey, labelKey, color, ariaLabel, format }) {
+function HBar({
+  rows,
+  valueKey,
+  labelKey,
+  color,
+  ariaLabel,
+  format,
+}: {
+  rows: ChartRow[];
+  valueKey: string;
+  labelKey: string;
+  color: string;
+  ariaLabel: string;
+  format: (value: number) => string;
+}) {
   const longest = rows.reduce((size, row) => Math.max(size, String(row[labelKey] || "").length), 8);
   const padLeft = Math.min(340, Math.max(88, longest * 6.2));
   const width = padLeft + 420;
@@ -210,7 +266,7 @@ function HBar({ rows, valueKey, labelKey, color, ariaLabel, format }) {
   const max = Math.max(0, ...values, 0.01);
   const span = max - min || 1;
   const innerW = width - pad.left - pad.right;
-  const xOf = (value) => pad.left + ((value - min) / span) * innerW;
+  const xOf = (value: number) => pad.left + ((value - min) / span) * innerW;
   const zero = xOf(0);
   const rowH = (height - pad.top - pad.bottom) / Math.max(rows.length, 1);
 
@@ -245,7 +301,7 @@ const HORIZON_ROI = [
   { key: "roi30", label: "30 days", color: COLORS.purple },
 ];
 
-export default function EdaBoard({ charts, accounts }) {
+export default function EdaBoard({ charts, accounts }: { charts: Loose | null; accounts: Loose | null }) {
   if (!charts) {
     return (
       <section className="panel">
@@ -254,45 +310,47 @@ export default function EdaBoard({ charts, accounts }) {
     );
   }
 
-  const calibration = charts.calibration || {};
-  const roiRows = (calibration["1d"] || []).map((row, index) => ({
+  const horizon = (key: string): ChartRow[] => rowsOf(charts.calibration?.[key]);
+  const dayBands = horizon("1d");
+  const roiRows = dayBands.map((row, index) => ({
     label: row.label,
     roi1: row.roi,
-    roi7: calibration["7d"]?.[index]?.roi,
-    roi30: calibration["30d"]?.[index]?.roi,
+    roi7: horizon("7d")[index]?.roi,
+    roi30: horizon("30d")[index]?.roi,
     count: row.count,
   }));
-  const countRows = (charts.price_hist || []).map((row) => ({ label: row.label, count: row.count }));
+  const countRows = rowsOf(charts.price_hist).map((row) => ({ label: row.label, count: row.count }));
   const equity = charts.equity || {};
-  const equitySource = [
-    { name: "Buy every Yes", color: COLORS.muted, rows: equity.buy_yes || [] },
-    { name: "Underdog, 1 day", color: COLORS.accent, rows: equity.underdog_1d || [] },
-    { name: "Underdog, 7 days", color: COLORS.good, rows: equity.underdog_7d || [] },
-    { name: "Underdog, 30 days", color: COLORS.gold, rows: equity.underdog_30d || [] },
-    { name: "Favorite above 0.80", color: COLORS.bad, rows: equity.favorite_80 || [] },
-    { name: "Follow the week", color: COLORS.purple, rows: equity.follow_week || [] },
-    { name: "Fade the week", color: "#8fd0c6", rows: equity.fade_week || [] },
+  const equitySource: { name: string; color: string; rows: ChartRow[] }[] = [
+    { name: "Buy every Yes", color: COLORS.muted, rows: rowsOf(equity.buy_yes) },
+    { name: "Underdog, 1 day", color: COLORS.accent, rows: rowsOf(equity.underdog_1d) },
+    { name: "Underdog, 7 days", color: COLORS.good, rows: rowsOf(equity.underdog_7d) },
+    { name: "Underdog, 30 days", color: COLORS.gold, rows: rowsOf(equity.underdog_30d) },
+    { name: "Favorite above 0.80", color: COLORS.bad, rows: rowsOf(equity.favorite_80) },
+    { name: "Follow the week", color: COLORS.purple, rows: rowsOf(equity.follow_week) },
+    { name: "Fade the week", color: "#8fd0c6", rows: rowsOf(equity.fade_week) },
   ];
-  const monthLabels = [...new Set(equitySource.flatMap((item) => item.rows.map((point) => point.month)))].sort();
+  const monthLabels = [...new Set(equitySource.flatMap((item) => item.rows.map((point) => String(point.month))))].sort();
   const equitySeries = equitySource
     .map((item) => {
-      const values = new Map(item.rows.map((point) => [point.month, point.pnl]));
+      const values = new Map(item.rows.map((point) => [String(point.month), num(point.pnl) ?? 0]));
       let last = 0;
       const points = monthLabels.map((month) => {
-        if (values.has(month)) last = values.get(month);
+        const found = values.get(month);
+        if (found !== undefined) last = found;
         return { y: last };
       });
       return { name: item.name, color: item.color, points };
     })
     .filter((item) => item.points.some((point) => point.y !== 0));
-  const strategyRows = (charts.strategies || []).map((row) => ({
+  const strategyRows = rowsOf(charts.strategies).map((row) => ({
     label: row.label,
     train: row.train?.roi,
     test: row.test?.roi,
     testWins: row.test?.win_rate,
     kept: row.kept,
   }));
-  const accountRows = (accounts?.accounts || [])
+  const accountRows = rowsOf(accounts?.accounts)
     .map((account) => ({
       label: account.user_name || "account",
       pnl: num(account.realized_pnl_sampled),
@@ -349,9 +407,9 @@ export default function EdaBoard({ charts, accounts }) {
           />
           <CalibrationChart
             series={[
-              { name: "1d", color: COLORS.accent, rows: calibration["1d"] || [] },
-              { name: "7d", color: COLORS.gold, rows: calibration["7d"] || [] },
-              { name: "30d", color: COLORS.purple, rows: calibration["30d"] || [] },
+              { name: "1d", color: COLORS.accent, rows: horizon("1d") as CalRow[] },
+              { name: "7d", color: COLORS.gold, rows: horizon("7d") as CalRow[] },
+              { name: "30d", color: COLORS.purple, rows: horizon("30d") as CalRow[] },
             ]}
           />
         </ChartCard>
@@ -361,7 +419,7 @@ export default function EdaBoard({ charts, accounts }) {
           title="Larger favorite study"
           note={`Last trade at least 24 hours before close, across ${summary.observations ?? "--"} resolved markets. Brier score ${summary.brier ?? "--"}. Favorite win rate ${summary.favorite_win_rate === null || summary.favorite_win_rate === undefined ? "--" : pct(summary.favorite_win_rate)} against an average price of ${summary.favorite_mean_price ?? "--"}.`}
         >
-          <CalibrationChart series={[{ name: "24h", color: COLORS.accent, rows: charts.favorite_buckets || [] }]} />
+          <CalibrationChart series={[{ name: "24h", color: COLORS.accent, rows: rowsOf(charts.favorite_buckets) as CalRow[] }]} />
         </ChartCard>
 
         <ChartCard
@@ -383,7 +441,7 @@ export default function EdaBoard({ charts, accounts }) {
 
         <ChartCard title="Yes rate after a week-long move" note="The move is the day-ahead price minus the week-ahead price.">
           <BarChart
-            rows={(charts.moves || []).map((row) => ({ label: row.label, yes_rate: row.yes_rate, count: row.count }))}
+            rows={rowsOf(charts.moves).map((row) => ({ label: row.label, yes_rate: row.yes_rate, count: row.count }))}
             series={[{ key: "yes_rate", label: "Yes win rate", color: COLORS.gold }]}
             yMode="pct"
             ariaLabel="Yes win rate by recent move"
@@ -399,7 +457,7 @@ export default function EdaBoard({ charts, accounts }) {
 
         <ChartCard title="Return by topic, buying Yes">
           <HBar
-            rows={charts.topics || []}
+            rows={rowsOf(charts.topics)}
             labelKey="topic"
             valueKey="yes_roi"
             color={COLORS.accent}
@@ -410,7 +468,7 @@ export default function EdaBoard({ charts, accounts }) {
 
         <ChartCard title="Return by topic, buying the underdog" note="Underdog means the cheap side priced from 0.03 to 0.15 a day before close.">
           <HBar
-            rows={charts.topics || []}
+            rows={rowsOf(charts.topics)}
             labelKey="topic"
             valueKey="underdog_roi"
             color={COLORS.good}
@@ -421,7 +479,7 @@ export default function EdaBoard({ charts, accounts }) {
 
         <ChartCard title="Yes win rate by topic">
           <HBar
-            rows={charts.topics || []}
+            rows={rowsOf(charts.topics)}
             labelKey="topic"
             valueKey="yes_rate"
             color={COLORS.gold}
@@ -432,7 +490,7 @@ export default function EdaBoard({ charts, accounts }) {
 
         <ChartCard title="Markets by topic">
           <HBar
-            rows={(charts.topics || []).map((row) => ({ ...row, label: row.topic }))}
+            rows={rowsOf(charts.topics).map((row) => ({ ...row, label: row.topic }))}
             labelKey="topic"
             valueKey="count"
             color={COLORS.purple}
@@ -454,7 +512,7 @@ export default function EdaBoard({ charts, accounts }) {
             ]}
           />
           <BarChart
-            rows={charts.volume_bands || []}
+            rows={rowsOf(charts.volume_bands)}
             series={[
               { key: "yes_roi", color: COLORS.accent },
               { key: "underdog_roi", color: COLORS.good },
@@ -467,7 +525,7 @@ export default function EdaBoard({ charts, accounts }) {
 
         <ChartCard title="Markets priced each quarter">
           <BarChart
-            rows={charts.quarters || []}
+            rows={rowsOf(charts.quarters)}
             series={[{ key: "count", color: COLORS.accent }]}
             ariaLabel="Markets per quarter"
           />
@@ -483,17 +541,17 @@ export default function EdaBoard({ charts, accounts }) {
           <LineChart
             yMode="pct"
             ariaLabel="Monthly price and yes rate"
-            xLabels={(charts.months || []).map((row) => row.month)}
+            xLabels={rowsOf(charts.months).map((row) => String(row.month))}
             series={[
-              { name: "price", color: COLORS.accent, points: (charts.months || []).map((row) => ({ y: row.mean_price })) },
-              { name: "yes", color: COLORS.good, points: (charts.months || []).map((row) => ({ y: row.yes_rate })) },
+              { name: "price", color: COLORS.accent, points: rowsOf(charts.months).map((row) => ({ y: num(row.mean_price) })) },
+              { name: "yes", color: COLORS.good, points: rowsOf(charts.months).map((row) => ({ y: num(row.yes_rate) })) },
             ]}
           />
         </ChartCard>
 
         <ChartCard title="Brier score by year" note="Lower is a sharper forecast. This uses the day-ahead price.">
           <BarChart
-            rows={(charts.years || []).map((row) => ({ label: row.year, brier: row.brier }))}
+            rows={rowsOf(charts.years).map((row) => ({ label: row.year, brier: row.brier }))}
             series={[{ key: "brier", color: COLORS.gold }]}
             ariaLabel="Brier score by year"
           />
@@ -501,7 +559,7 @@ export default function EdaBoard({ charts, accounts }) {
 
         <ChartCard title="Buying Yes, return by year">
           <BarChart
-            rows={(charts.years || []).map((row) => ({ label: row.year, yes_roi: row.yes_roi }))}
+            rows={rowsOf(charts.years).map((row) => ({ label: row.year, yes_roi: row.yes_roi }))}
             series={[{ key: "yes_roi", color: COLORS.accent }]}
             yMode="roi"
             ariaLabel="Yes return by year"
@@ -513,7 +571,7 @@ export default function EdaBoard({ charts, accounts }) {
           note={`${charts.baskets?.n ?? 0} events had a price on every outcome. ${charts.baskets?.exactly_one ?? 0} of them resolved with exactly one winner.`}
         >
           <BarChart
-            rows={charts.baskets?.bands || []}
+            rows={rowsOf(charts.baskets?.bands)}
             series={[{ key: "count", color: COLORS.purple }]}
             ariaLabel="Complete set price sums"
           />

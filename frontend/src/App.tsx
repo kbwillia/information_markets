@@ -1,5 +1,46 @@
 import { useEffect, useState } from "react";
-import EdaBoard from "./eda.jsx";
+import EdaBoard from "./eda.tsx";
+
+type Loose = Record<string, any>;
+
+type Market = {
+  platform: string;
+  id: string;
+  title?: string;
+  volume?: number | null;
+  yes_price?: number | null;
+  fetched_at_est?: string;
+  error?: string;
+  playbook?: {
+    api?: string;
+    cost?: string;
+    strategy?: string;
+    endpoint?: string;
+    label?: string;
+    family?: string;
+  };
+};
+
+type CatalogResponse = {
+  status?: string;
+  loaded?: number;
+  total?: number;
+  markets?: Market[];
+  fetched_at_est?: string;
+};
+
+type PlaybookFamily = {
+  family: string;
+  label: string;
+  markets: number;
+};
+
+type PlaybookResponse = {
+  families?: PlaybookFamily[];
+  fetched_at_est?: string;
+  markets?: number;
+  status?: string;
+};
 
 const TABS = [
   { id: "overview", label: "Overview" },
@@ -10,66 +51,67 @@ const TABS = [
   { id: "logs", label: "Logs" },
 ];
 
-async function getJson(path, options) {
+async function getJson<T = Loose>(path: string, options?: RequestInit): Promise<T> {
   const response = await fetch(path, options);
   const body = await response.json().catch(() => ({}));
   if (!response.ok) {
-    throw new Error(body.detail || `Request failed (${response.status})`);
+    const detail = typeof body?.detail === "string" ? body.detail : "";
+    throw new Error(detail || `Request failed (${response.status})`);
   }
-  return body;
+  return body as T;
 }
 
-function money(value) {
+function money(value: unknown): string {
   if (value === null || value === undefined || value === "") return "--";
   const number = Number(value);
   if (Number.isNaN(number)) return String(value);
   return number.toLocaleString("en-US", { maximumFractionDigits: 2 });
 }
 
-function pct(value, digits = 1) {
+function pct(value: unknown, digits = 1): string {
   if (value === null || value === undefined || value === "") return "--";
   const number = Number(value);
   if (Number.isNaN(number)) return String(value);
   return `${number.toFixed(digits)}%`;
 }
 
-function price(value) {
+function price(value: unknown): string {
   if (value === null || value === undefined || value === "") return "--";
   const number = Number(value);
   if (Number.isNaN(number)) return String(value);
   return number.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 3 });
 }
 
-function shortAddr(addr) {
+function shortAddr(addr: string | null | undefined): string {
   if (!addr || addr.length < 12) return addr || "--";
   return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
 }
 
 export default function App() {
   const [tab, setTab] = useState("overview");
-  const [status, setStatus] = useState(null);
-  const [runner, setRunner] = useState(null);
-  const [strategies, setStrategies] = useState([]);
-  const [logs, setLogs] = useState([]);
-  const [favorites, setFavorites] = useState(null);
-  const [backtests, setBacktests] = useState(null);
-  const [charts, setCharts] = useState(null);
-  const [topAccountsData, setTopAccountsData] = useState(null);
+  const [status, setStatus] = useState<Loose | null>(null);
+  const [runner, setRunner] = useState<Loose | null>(null);
+  const [strategies, setStrategies] = useState<Loose[]>([]);
+  const [logs, setLogs] = useState<Loose[]>([]);
+  const [favorites, setFavorites] = useState<Loose | null>(null);
+  const [backtests, setBacktests] = useState<Loose | null>(null);
+  const [charts, setCharts] = useState<Loose | null>(null);
+  const [topAccountsData, setTopAccountsData] = useState<Loose | null>(null);
   const [accountSort, setAccountSort] = useState("rov");
   const [cohortFilter, setCohortFilter] = useState("all");
   const [accountPeriod, setAccountPeriod] = useState("ALL");
   const [selectedAddress, setSelectedAddress] = useState("");
   const [customWallet, setCustomWallet] = useState("");
-  const [copyAmountUsd, setCopyAmountUsd] = useState(100);
+  const [copyAmountUsd, setCopyAmountUsd] = useState("100");
   const [platform, setPlatform] = useState("");
   const [family, setFamily] = useState("");
-  const [playbooks, setPlaybooks] = useState(null);
+  const [playbooks, setPlaybooks] = useState<PlaybookResponse | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
-  const [catalog, setCatalog] = useState(null);
+  const [catalog, setCatalog] = useState<CatalogResponse | null>(null);
   const [marketQuery, setMarketQuery] = useState("");
   const [marketPage, setMarketPage] = useState(0);
-  const [followed, setFollowed] = useState(() => {
+  const [followed, setFollowed] = useState<Market[]>(() => {
     try {
       const saved = JSON.parse(localStorage.getItem("followed-markets") || "[]");
       return Array.isArray(saved) ? saved : [];
@@ -77,7 +119,7 @@ export default function App() {
       return [];
     }
   });
-  const [latest, setLatest] = useState([]);
+  const [latest, setLatest] = useState<Market[]>([]);
   const [latestAt, setLatestAt] = useState("");
   const pageSize = 50;
 
@@ -169,7 +211,11 @@ export default function App() {
     return () => clearInterval(timer);
   }, [tab, catalog?.status, platform, family, marketQuery, marketPage]);
 
-  async function act(path, body) {
+function errorMessage(err: unknown): string {
+  return err instanceof Error ? err.message : "Request failed";
+}
+
+async function act(path: string, body?: Loose) {
     setBusy(true);
     setError("");
     try {
@@ -181,14 +227,14 @@ export default function App() {
       await refresh();
       return res;
     } catch (err) {
-      setError(err.message);
+      setError(errorMessage(err));
       return null;
     } finally {
       setBusy(false);
     }
   }
 
-  async function handleAnalyzeWallet(addressToAnalyze) {
+  async function handleAnalyzeWallet(addressToAnalyze?: string) {
     const target = (addressToAnalyze || customWallet).trim();
     if (!target) return;
     const res = await act("/api/accounts/analyze", {
@@ -202,7 +248,7 @@ export default function App() {
     }
   }
 
-  async function handleToggleWatchlist(account) {
+  async function handleToggleWatchlist(account: Loose) {
     await act("/api/accounts/watchlist/toggle", {
       address: account.address,
       user_name: account.user_name,
@@ -215,7 +261,7 @@ export default function App() {
     });
   }
 
-  async function handleCopyPosition(signalOrPos, trader) {
+  async function handleCopyPosition(signalOrPos: Loose, trader?: Loose) {
     const traderAddress = signalOrPos.trader_address || trader?.address || "";
     const traderName = signalOrPos.trader_name || trader?.user_name || "";
     const curPrice = signalOrPos.current_price ?? signalOrPos.cur_price ?? 0.5;
@@ -234,15 +280,15 @@ export default function App() {
     });
   }
 
-  function marketKey(market) {
+  function marketKey(market: Market) {
     return `${market.platform}:${market.id}`;
   }
 
-  function isFollowed(market) {
+  function isFollowed(market: Market) {
     return followed.some((item) => item.platform === market.platform && item.id === market.id);
   }
 
-  function toggleFollow(market) {
+  function toggleFollow(market: Market) {
     setFollowed((current) => {
       if (current.some((item) => item.platform === market.platform && item.id === market.id)) {
         return current.filter((item) => !(item.platform === market.platform && item.id === market.id));
@@ -251,7 +297,7 @@ export default function App() {
     });
   }
 
-  function togglePage(marketsOnPage) {
+  function togglePage(marketsOnPage: Market[]) {
     const keys = new Set(marketsOnPage.map(marketKey));
     const allOn = marketsOnPage.every((market) => isFollowed(market));
     setFollowed((current) => {
@@ -276,18 +322,18 @@ export default function App() {
     setError("");
     try {
       const titles = new Map(followed.map((item) => [marketKey(item), item.title]));
-      const collected = [];
+      const collected: Market[] = [];
       let fetchedAt = "";
       for (let index = 0; index < followed.length; index += 80) {
         const chunk = followed.slice(index, index + 80);
-        const body = await getJson("/api/markets/latest", {
+        const body = await getJson<{ markets?: Market[]; fetched_at_est?: string }>("/api/markets/latest", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             markets: chunk.map((item) => ({ platform: item.platform, id: item.id })),
           }),
         });
-        collected.push(...body.markets);
+        collected.push(...(body.markets || []));
         fetchedAt = body.fetched_at_est || fetchedAt;
       }
       setLatest(
@@ -298,7 +344,7 @@ export default function App() {
       );
       setLatestAt(fetchedAt);
     } catch (err) {
-      setError(err.message);
+      setError(errorMessage(err));
     } finally {
       setBusy(false);
     }
@@ -309,7 +355,7 @@ export default function App() {
   const catalogTotal = catalog?.total || 0;
   const pageCount = Math.max(1, Math.ceil(catalogTotal / pageSize));
 
-  const rawAccounts = topAccountsData?.accounts || [];
+  const rawAccounts: Loose[] = Array.isArray(topAccountsData?.accounts) ? topAccountsData.accounts : [];
   const filteredAccounts = rawAccounts
     .filter((acc) => {
       if (cohortFilter === "pct") return acc.earning_cohort === "pct_earner" || acc.earning_cohort === "both";
@@ -336,8 +382,8 @@ export default function App() {
   const selectedAccount =
     rawAccounts.find((a) => a.address === selectedAddress) || filteredAccounts[0] || rawAccounts[0] || null;
   const synthesis = topAccountsData?.synthesis;
-  const copySignals = topAccountsData?.copy_signals || [];
-  const paperCopyTrades = topAccountsData?.paper_copy_trades || [];
+  const copySignals: Loose[] = Array.isArray(topAccountsData?.copy_signals) ? topAccountsData.copy_signals : [];
+  const paperCopyTrades: Loose[] = Array.isArray(topAccountsData?.paper_copy_trades) ? topAccountsData.paper_copy_trades : [];
   const followedAccountsCount = rawAccounts.filter((a) => a.is_followed).length;
 
   return (
@@ -495,7 +541,7 @@ export default function App() {
                 </div>
               </div>
               <ul className="findings-list">
-                {(synthesis.key_findings || []).map((finding, idx) => (
+                {(synthesis.key_findings || []).map((finding: string, idx: number) => (
                   <li key={idx}>{finding}</li>
                 ))}
               </ul>
@@ -752,7 +798,7 @@ export default function App() {
                 <div>
                   <strong>Detected Trading Patterns:</strong>
                   <ul className="findings-list">
-                    {(selectedAccount.llm_analysis?.pattern_findings || []).map((item, index) => (
+                    {(selectedAccount.llm_analysis?.pattern_findings || []).map((item: string, index: number) => (
                       <li key={index}>{item}</li>
                     ))}
                   </ul>
@@ -808,7 +854,7 @@ export default function App() {
                         </tr>
                       </thead>
                       <tbody>
-                        {selectedAccount.open_positions.map((pos, idx) => (
+                        {selectedAccount.open_positions.map((pos: Loose, idx: number) => (
                           <tr key={`${pos.condition_id}-${idx}`}>
                             <td>
                               {pos.title}
@@ -859,7 +905,7 @@ export default function App() {
                       {[
                         ...(selectedAccount.top_closed_wins || []),
                         ...(selectedAccount.top_closed_losses || []).slice(0, 2),
-                      ].map((pos, idx) => (
+                      ].map((pos: Loose, idx: number) => (
                         <tr key={`${pos.condition_id}-${idx}`}>
                           <td>{pos.title}</td>
                           <td>{pos.outcome}</td>
@@ -973,36 +1019,56 @@ export default function App() {
       {tab === "markets" && (
         <>
           <section className="panel">
-            <div className="row">
-              <label htmlFor="platform">Platform</label>
-              <select
-                id="platform"
-                value={platform}
-                onChange={(event) => {
-                  setPlatform(event.target.value);
-                  setMarketPage(0);
-                }}
-              >
-                <option value="">Both</option>
-                <option value="kalshi">Kalshi</option>
-                <option value="polymarket">Polymarket</option>
-              </select>
-              <label htmlFor="family">Data source</label>
-              <select
-                id="family"
-                value={family}
-                onChange={(event) => {
-                  setFamily(event.target.value);
-                  setMarketPage(0);
-                }}
-              >
-                <option value="">Every family</option>
-                {(playbooks?.families || []).map((item) => (
-                  <option key={item.family} value={item.family}>
-                    {item.label} ({item.markets})
-                  </option>
+            <div className="choice-block">
+              <p className="choice-label">Venue</p>
+              <div className="choice-row">
+                {[
+                  { id: "", label: "All venues" },
+                  { id: "kalshi", label: "Kalshi" },
+                  { id: "polymarket", label: "Polymarket" },
+                ].map((item) => (
+                  <button
+                    key={item.id || "all"}
+                    type="button"
+                    className={platform === item.id ? "choice active" : "choice"}
+                    onClick={() => {
+                      setPlatform(item.id);
+                      setMarketPage(0);
+                    }}
+                  >
+                    {item.label}
+                  </button>
                 ))}
-              </select>
+              </div>
+              <p className="choice-label">Data source</p>
+              <div className="choice-row">
+                <button
+                  type="button"
+                  className={family === "" ? "choice active" : "choice"}
+                  onClick={() => {
+                    setFamily("");
+                    setMarketPage(0);
+                  }}
+                >
+                  Every family
+                </button>
+                {(playbooks?.families || []).map((item) => (
+                  <button
+                    key={item.family}
+                    type="button"
+                    className={family === item.family ? "choice active" : "choice"}
+                    onClick={() => {
+                      setFamily(item.family);
+                      setMarketPage(0);
+                    }}
+                  >
+                    {item.label}
+                    <small>{item.markets.toLocaleString("en-US")}</small>
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="row">
               <input
                 id="market-search"
                 value={marketQuery}
@@ -1017,7 +1083,7 @@ export default function App() {
               </button>
               <button
                 disabled={catalog?.status === "loading"}
-                onClick={() => loadCatalog(0, true).catch((err) => setError(err.message))}
+                onClick={() => loadCatalog(0, true).catch((err) => setError(errorMessage(err)))}
               >
                 Reload catalog
               </button>
@@ -1026,7 +1092,7 @@ export default function App() {
               {catalog?.status === "loading"
                 ? `Loading every open market. ${catalog.loaded || 0} found so far.`
                 : catalog?.fetched_at_est
-                  ? `${catalogTotal} markets in this view. Catalog as of ${catalog.fetched_at_est}. Check the ones to follow, then get their latest quotes.`
+                  ? `${catalogTotal} markets in this view. Catalog as of ${catalog.fetched_at_est}. Click a row to follow it, then get the latest quotes.`
                   : "Loading the market catalog."}
             </p>
             {catalog?.status === "ready" && catalogMarkets.length === 0 ? (
@@ -1062,12 +1128,18 @@ export default function App() {
                       </tr>
                     </thead>
                     <tbody>
-                      {catalogMarkets.map((market) => (
-                        <tr key={marketKey(market)}>
-                          <td>
+                      {catalogMarkets.map((market) => {
+                        const followedRow = isFollowed(market);
+                        return (
+                        <tr
+                          key={marketKey(market)}
+                          className={followedRow ? "pick followed" : "pick"}
+                          onClick={() => toggleFollow(market)}
+                        >
+                          <td onClick={(event) => event.stopPropagation()}>
                             <input
                               type="checkbox"
-                              checked={isFollowed(market)}
+                              checked={followedRow}
                               aria-label={`Follow ${market.title || market.id}`}
                               onChange={() => toggleFollow(market)}
                             />
@@ -1085,7 +1157,8 @@ export default function App() {
                           <td>{market.playbook?.cost || "--"}</td>
                           <td className="strategy">{market.playbook?.strategy || "--"}</td>
                         </tr>
-                      ))}
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -1152,7 +1225,7 @@ export default function App() {
               </tr>
             </thead>
             <tbody>
-              {backtests.strategies.map((row) => (
+              {backtests.strategies.map((row: Loose) => (
                 <tr key={row.name}>
                   <td>
                     {row.label}
@@ -1190,7 +1263,7 @@ export default function App() {
                 </tr>
               </thead>
               <tbody>
-                {favorites.buckets.map((bucket) => (
+                {favorites.buckets.map((bucket: Loose) => (
                   <tr key={bucket.label}>
                     <td>{bucket.label}</td>
                     <td>{bucket.count}</td>
