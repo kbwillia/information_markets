@@ -1,4 +1,5 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
+import AccountDash from "./account-dash.tsx";
 
 type Loose = Record<string, any>;
 type ChartRow = Record<string, any>;
@@ -28,6 +29,20 @@ function pct(value: unknown): string {
   const number = num(value);
   if (number === null) return "--";
   return `${(number * 100).toFixed(1)}%`;
+}
+
+function money(value: unknown): string {
+  const number = num(value);
+  if (number === null) return "--";
+  if (number >= 1_000_000) return `$${(number / 1_000_000).toFixed(1)}M`;
+  if (number >= 1_000) return `$${(number / 1_000).toFixed(0)}K`;
+  return `$${number.toFixed(0)}`;
+}
+
+function points(value: unknown): string {
+  const number = num(value);
+  if (number === null) return "--";
+  return `${(number * 100).toFixed(1)} pts`;
 }
 
 function ChartCard({
@@ -301,7 +316,194 @@ const HORIZON_ROI = [
   { key: "roi30", label: "30 days", color: COLORS.purple },
 ];
 
-export default function EdaBoard({ charts, accounts }: { charts: Loose | null; accounts: Loose | null }) {
+export default function EdaBoard({
+  charts,
+  accounts,
+  onOpenAccount,
+}: {
+  charts: Loose | null;
+  accounts: Loose | null;
+  onOpenAccount?: (account: Loose) => void;
+}) {
+  const [edaView, setEdaView] = useState<"families" | "accounts" | "calibration">("families");
+
+  return (
+    <>
+      <div className="tabs eda-switch">
+        <button type="button" className={edaView === "families" ? "active" : ""} onClick={() => setEdaView("families")}>
+          Families
+        </button>
+        <button type="button" className={edaView === "accounts" ? "active" : ""} onClick={() => setEdaView("accounts")}>
+          Accounts
+        </button>
+        <button
+          type="button"
+          className={edaView === "calibration" ? "active" : ""}
+          onClick={() => setEdaView("calibration")}
+        >
+          Calibration
+        </button>
+      </div>
+      {edaView === "families" ? (
+        <FamilyBoard charts={charts} />
+      ) : edaView === "accounts" ? (
+        <AccountDash accounts={accounts} onOpenAccount={onOpenAccount} />
+      ) : (
+        <CalibrationBoard charts={charts} accounts={accounts} />
+      )}
+    </>
+  );
+}
+
+function FamilyBoard({ charts }: { charts: Loose | null }) {
+  if (!charts) {
+    return (
+      <section className="panel">
+        <p className="muted">Family data is not loaded yet.</p>
+      </section>
+    );
+  }
+
+  const resolved = rowsOf(charts.families).filter((row) => row.count >= 40);
+  const thin = rowsOf(charts.families).filter((row) => row.count < 40);
+  const open = rowsOf(charts.open_families);
+  const openCount = open.reduce((sum, row) => sum + (num(row.markets) || 0), 0);
+  const watched = [...resolved].sort((a, b) => (num(b.gap) || 0) - (num(a.gap) || 0));
+  const first = watched[0];
+  const second = watched[1];
+  const asOf = charts.catalog_as_of_est || "the latest catalog load";
+
+  return (
+    <>
+      <div className="grid">
+        <div className="card">
+          <span>{first ? first.label : "Largest gap"}</span>
+          <strong className="good">{first ? points(first.gap) : "--"}</strong>
+        </div>
+        <div className="card">
+          <span>{second ? second.label : "Next gap"}</span>
+          <strong className={(num(second?.gap) || 0) > 0 ? "good" : ""}>{second ? points(second.gap) : "--"}</strong>
+        </div>
+        <div className="card">
+          <span>Open contracts</span>
+          <strong>{openCount ? openCount.toLocaleString("en-US") : "--"}</strong>
+        </div>
+        <div className="card">
+          <span>Catalog</span>
+          <strong>{asOf}</strong>
+        </div>
+      </div>
+
+      <section className="panel">
+        <h2>What is tradable</h2>
+        <p>
+          {first && second
+            ? `${first.label} Yes won ${pct(first.actual)} against a day-ahead price of ${Number(first.mean_price).toFixed(2)} (${first.count} markets, ${pct(first.yes_roi)} after one cent of slippage). ${second.label} won ${pct(second.actual)} against ${Number(second.mean_price).toFixed(2)} (${second.count} markets, ${pct(second.yes_roi)}). Both samples are small.`
+            : "The resolved sample does not have two families with at least 40 markets."}
+        </p>
+        <p className="muted">
+          Open above and over ladders were checked against the catalog as of {asOf}. A higher strike bidding through a lower strike's ask did not show up. The mid-price gaps on yields and gas sit on wide books, so they are not a fill. Crypto and temperature look cheap because most strikes are already out of the money.
+        </p>
+      </section>
+
+      <div className="chart-grid">
+        {resolved.length > 0 && (
+          <ChartCard
+            wide
+            title="Resolved Yes rate minus the price, by data source"
+            note="Saved resolved sample, one price taken a day before close. Families with at least 40 markets. A bar above zero means Yes won more often than that price."
+          >
+            <HBar
+              rows={resolved.map((row) => ({ label: `${row.label} (${row.count})`, value: row.gap }))}
+              labelKey="label"
+              valueKey="value"
+              color={COLORS.accent}
+              ariaLabel="Yes rate minus price by data source family"
+              format={(value) => points(value)}
+            />
+            <FamilyTable rows={resolved} />
+          </ChartCard>
+        )}
+
+        {open.length > 0 && (
+          <ChartCard
+            wide
+            title="Open contracts by data source"
+            note={`Share of contracts priced under 15 cents. Catalog as of ${asOf}. The family chips on Markets are a filtered slice of this book.`}
+          >
+            <div className="market-list">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Family</th>
+                    <th>Open markets</th>
+                    <th>Under 15 cents</th>
+                    <th>Volume</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {open.map((row) => (
+                    <tr key={row.family}>
+                      <td>{row.label}</td>
+                      <td>{Number(row.markets).toLocaleString("en-US")}</td>
+                      <td>{pct(row.cheap_share)}</td>
+                      <td>{money(row.volume)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </ChartCard>
+        )}
+
+        {thin.length > 0 && (
+          <ChartCard
+            wide
+            title="Resolved families with fewer than 40 markets"
+            note="These returns are too small to trade from. Weather and player props have no resolved rows in this sample."
+          >
+            <FamilyTable rows={thin} />
+          </ChartCard>
+        )}
+      </div>
+    </>
+  );
+}
+
+function FamilyTable({ rows }: { rows: ChartRow[] }) {
+  return (
+    <div className="market-list">
+      <table>
+        <thead>
+          <tr>
+            <th>Family</th>
+            <th>Markets</th>
+            <th>Day-ahead price</th>
+            <th>Yes won</th>
+            <th>Gap</th>
+            <th>Yes return</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row) => (
+            <tr key={row.family}>
+              <td>{row.label}</td>
+              <td>{row.count}</td>
+              <td>{Number(row.mean_price).toFixed(2)}</td>
+              <td>{Number(row.actual).toFixed(2)}</td>
+              <td className={(num(row.gap) || 0) >= 0.08 ? "good" : (num(row.gap) || 0) < 0 ? "bad" : ""}>
+                {points(row.gap)}
+              </td>
+              <td>{row.yes_roi === null || row.yes_roi === undefined ? "--" : pct(row.yes_roi)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function CalibrationBoard({ charts, accounts }: { charts: Loose | null; accounts: Loose | null }) {
   if (!charts) {
     return (
       <section className="panel">

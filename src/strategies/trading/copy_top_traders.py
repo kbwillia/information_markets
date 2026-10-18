@@ -200,6 +200,7 @@ class CopyTopTradersStrategy(BaseStrategy):
             trader_pnl = float(trader.get('pnl', 0) or 0)
             trader_vol = float(trader.get('vol', trader.get('volume', 0)) or 0)
             trader_rank = int(trader.get('rank', 0) or 0)
+            trader_name = trader.get('userName') or trader.get('user_name') or trader_address[:10]
             
             # Calculate confidence based on trader performance
             # Higher PnL and volume = higher confidence
@@ -277,8 +278,10 @@ class CopyTopTradersStrategy(BaseStrategy):
                         target_price=current_price * 1.05,  # Expect 5% upside
                         current_price=current_price,
                         confidence=final_confidence,
-                        reasoning=f"Copying {trader.get('userName', 'trader')[:15]} (Rank {trader_rank}, PnL: ${trader_pnl:,.0f}, Vol: ${trader_vol:,.0f}). Position size: {position_size:.2f}",
+                        reasoning=f"Copying {trader_name} (Rank {trader_rank}, PnL: ${trader_pnl:,.0f}, Vol: ${trader_vol:,.0f}). Position size: {position_size:.2f}",
                         metadata={
+                            'copied_account': trader_name,
+                            'trader_name': trader_name,
                             'trader_address': trader_address,
                             'trader_rank': trader_rank,
                             'trader_pnl': trader_pnl,
@@ -390,8 +393,10 @@ class CopyTopTradersStrategy(BaseStrategy):
                         target_price=current_price * 1.05,
                         current_price=current_price,
                         confidence=activity_confidence,
-                        reasoning=f"Copying recent trade from {trader.get('userName', 'trader')[:15]} (Rank {trader_rank}, PnL: ${trader_pnl:,.0f})",
+                        reasoning=f"Copying recent trade from {trader_name} (Rank {trader_rank}, PnL: ${trader_pnl:,.0f})",
                         metadata={
+                            'copied_account': trader_name,
+                            'trader_name': trader_name,
                             'trader_address': trader_address,
                             'trader_rank': trader_rank,
                             'trader_pnl': trader_pnl,

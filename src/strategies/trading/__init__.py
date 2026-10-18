@@ -8,6 +8,7 @@ from src.strategies.trading.momentum import MomentumStrategy
 from src.strategies.trading.arbitrage import ArbitrageStrategy
 from src.strategies.trading.complete_set import CompleteSetStrategy
 from src.strategies.trading.copy_top_traders import CopyTopTradersStrategy
+from src.strategies.trading.copy_watchlist import CopyWatchlistStrategy
 
 __all__ = [
     'BaseStrategy',
@@ -22,5 +23,6 @@ __all__ = [
     'ArbitrageStrategy',
     'CompleteSetStrategy',
     'CopyTopTradersStrategy',
+    'CopyWatchlistStrategy',
 ]
 

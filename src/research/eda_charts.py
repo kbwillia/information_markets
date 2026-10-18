@@ -1,5 +1,6 @@
 """Chart series for the EDA tab, built from the saved backtest sample."""
 import json
+import re
 from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
@@ -14,6 +15,24 @@ from src.research.backtest import (
     rule_underdog_30d,
     rule_underdog_7d,
 )
+from src.research.market_playbooks import PLAYBOOKS, family_for
+
+LADDER_STRIKE = re.compile(
+    r"(?:above|over|at least|or more|or higher)\s+\$?\(?"
+    r"(-?\d{1,3}(?:,\d{3})*(?:\.\d+)?)\s*(billion|million|thousand|bn|mn|b|m|k)?",
+    re.IGNORECASE,
+)
+WINS_BY = re.compile(r"^(.+?)\s+wins by\b", re.IGNORECASE)
+STRIKE_SCALE = {
+    "b": 1_000_000_000,
+    "bn": 1_000_000_000,
+    "billion": 1_000_000_000,
+    "m": 1_000_000,
+    "mn": 1_000_000,
+    "million": 1_000_000,
+    "k": 1_000,
+    "thousand": 1_000,
+}
 
 EST = ZoneInfo("America/New_York")
 VOLUME_BANDS = (
@@ -327,6 +346,136 @@ def _baskets(observations):
     }
 
 
+def _family_history(observations):
+    grouped = defaultdict(list)
+    for obs in observations:
+        if obs.get("kind") != "binary" or obs.get("p1") is None:
+            continue
+        family = family_for("polymarket", obs.get("token") or "", obs.get("question") or "")
+        grouped[family].append(obs)
+    rows = []
+    for family, items in grouped.items():
+        trades = []
+        wins = 0
+        for obs in items:
+            wins += 1 if obs.get("yes_won") else 0
+            trade = buy(obs.get("p1"), obs.get("yes_won"))
+            if trade:
+                trades.append(trade)
+        mean_price = sum(obs["p1"] for obs in items) / len(items)
+        actual = wins / len(items)
+        rows.append(
+            {
+                "family": family,
+                "label": PLAYBOOKS[family]["label"],
+                "count": len(items),
+                "mean_price": _round(mean_price),
+                "actual": _round(actual),
+                "gap": _round(actual - mean_price),
+                "yes_roi": _roi(trades),
+            }
+        )
+    rows.sort(key=lambda row: row["count"], reverse=True)
+    return rows
+
+
+def _ladder_strike(title: str):
+    match = LADDER_STRIKE.search(title or "")
+    if not match:
+        return None
+    value = float(match.group(1).replace(",", ""))
+    scale = STRIKE_SCALE.get((match.group(2) or "").lower(), 1)
+    return value * scale
+
+
+def _group_key(row: dict) -> str:
+    title = row.get("title") or ""
+    side = WINS_BY.match(title)
+    side_key = side.group(1).strip().lower() if side else ""
+    if row.get("platform") == "polymarket" and row.get("event_slug"):
+        return f"polymarket:{row['event_slug']}:{side_key}"
+    ticker = row.get("id") or ""
+    parts = ticker.split("-")
+    base = "-".join(parts[:-1]) if len(parts) > 1 else ticker
+    return f"kalshi:{base}:{side_key}"
+
+
+def ladder_breaks(rows, minimum_gap=0.04):
+    """Higher 'above/over' strikes that are priced richer than a lower strike."""
+    groups = defaultdict(list)
+    for row in rows:
+        groups[_group_key(row)].append(row)
+    breaks = []
+    for key, items in groups.items():
+        ladder = []
+        for item in items:
+            strike = _ladder_strike(item.get("title") or "")
+            price = item.get("yes_price")
+            if strike is None or price in (None, ""):
+                continue
+            price = float(price)
+            leg_volume = float(item.get("volume") or 0)
+            if price <= 0.02 or price >= 0.98 or leg_volume < 1:
+                continue
+            ladder.append((strike, price, item))
+        if len(ladder) < 2:
+            continue
+        ladder.sort(key=lambda point: point[0])
+        worst = None
+        for left, right in zip(ladder, ladder[1:]):
+            if right[0] <= left[0]:
+                continue
+            gap = right[1] - left[1]
+            if gap < minimum_gap:
+                continue
+            if worst is None or gap > worst[0]:
+                worst = (gap, left, right)
+        if worst is None:
+            continue
+        gap, left, right = worst
+        volume = sum(float(item.get("volume") or 0) for item in items)
+        family = family_for(left[2].get("platform") or "", left[2].get("id") or "", left[2].get("title") or "")
+        breaks.append(
+            {
+                "family": family,
+                "label": PLAYBOOKS[family]["label"],
+                "group": key.split(":", 1)[-1],
+                "lower_title": left[2].get("title") or left[2].get("id"),
+                "lower_price": round(left[1], 4),
+                "higher_title": right[2].get("title") or right[2].get("id"),
+                "higher_price": round(right[1], 4),
+                "gap": round(gap, 4),
+                "volume": round(volume, 2),
+                "contracts": len(ladder),
+            }
+        )
+    breaks.sort(key=lambda row: (row["gap"], row["volume"]), reverse=True)
+    return breaks[:40]
+
+
+def open_family_shape(rows):
+    grouped = defaultdict(list)
+    for row in rows:
+        family = family_for(row.get("platform") or "", row.get("id") or "", row.get("title") or "")
+        grouped[family].append(row)
+    summary = []
+    for family, items in grouped.items():
+        priced = [float(item["yes_price"]) for item in items if item.get("yes_price") not in (None, "")]
+        cheap = sum(1 for price in priced if price < 0.15)
+        summary.append(
+            {
+                "family": family,
+                "label": PLAYBOOKS[family]["label"],
+                "markets": len(items),
+                "priced": len(priced),
+                "cheap_share": None if not priced else round(cheap / len(priced), 4),
+                "volume": round(sum(float(item.get("volume") or 0) for item in items), 2),
+            }
+        )
+    summary.sort(key=lambda row: row["markets"], reverse=True)
+    return summary
+
+
 def build_charts(observations, favorites=None, backtests=None):
     binary = [obs for obs in observations if obs.get("kind") == "binary"]
     return {
@@ -352,6 +501,7 @@ def build_charts(observations, favorites=None, backtests=None):
             "favorite_mean_price": (favorites or {}).get("favorite_mean_price"),
         },
         "topics": _topic_rows(observations),
+        "families": _family_history(observations),
         "volume_bands": _band_rows(observations),
         "months": _monthly(observations),
         "quarters": _quarters(_monthly(observations)),

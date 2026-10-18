@@ -264,10 +264,10 @@ class KalshiClient:
         except Exception as e:
             raise Exception(f"Error getting balance: {e}")
     
-    def get_positions(self) -> Dict:
-        """Get current positions."""
+    def get_positions(self, limit: int = 200, count_filter: str = "position") -> Dict:
+        """Get current positions. count_filter=position keeps only non-zero holdings."""
         try:
-            response = self.client.get_positions()
+            response = self.client.get_positions(limit=limit, count_filter=count_filter)
             if hasattr(response, 'dict'):
                 return response.dict()
             elif hasattr(response, '__dict__'):

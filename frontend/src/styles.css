@@ -370,6 +370,30 @@ svg {
   margin-top: 12px;
 }
 
+button.linkish {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  color: var(--accent);
+  text-align: left;
+}
+
+a.external {
+  color: var(--accent);
+  text-decoration: none;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 8px 12px;
+  background: #222a35;
+}
+
+.detail-copy {
+  white-space: pre-wrap;
+  line-height: 1.45;
+  max-height: 220px;
+  overflow: auto;
+}
+
 .zero-line {
   stroke: #5c6b7d;
   stroke-width: 1;
@@ -410,8 +434,129 @@ svg {
   margin: 4px 0 16px;
 }
 
+.eda-switch {
+  margin-bottom: 12px;
+}
+
+.dossier-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  margin: 16px 0;
+}
+
+.dossier-name {
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.op-badge {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 13px;
+}
+
+.op-bot {
+  color: var(--bad);
+  border-color: var(--bad);
+}
+
+.op-human {
+  color: var(--good);
+  border-color: var(--good);
+}
+
+.op-mixed {
+  color: #d7b56d;
+  border-color: #d7b56d;
+}
+
+.stat-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.stat-strip strong {
+  display: block;
+  margin-top: 4px;
+}
+
+.dossier-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.dossier-grid.three {
+  grid-template-columns: 1fr 1fr 1fr;
+}
+
+.inner-panel {
+  margin-bottom: 0;
+}
+
+.share-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.share-row {
+  display: grid;
+  grid-template-columns: 110px 1fr 52px;
+  gap: 8px;
+  align-items: center;
+  font-size: 13px;
+}
+
+.share-label {
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.share-track {
+  height: 8px;
+  background: #222a35;
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.share-fill {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+}
+
+.share-val {
+  text-align: right;
+}
+
+.source-list {
+  padding-left: 18px;
+}
+
+.source-list li {
+  margin-bottom: 10px;
+}
+
+.mono {
+  font-family: ui-monospace, Consolas, monospace;
+  word-break: break-all;
+}
+
 @media (max-width: 800px) {
   .chart-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dossier-grid,
+  .dossier-grid.three {
     grid-template-columns: 1fr;
   }
 }

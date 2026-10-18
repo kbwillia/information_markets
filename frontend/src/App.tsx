@@ -10,7 +10,13 @@ type Market = {
   volume?: number | null;
   yes_price?: number | null;
   fetched_at_est?: string;
+  started_at_est?: string;
+  ends_at_est?: string;
+  end_date?: string;
   error?: string;
+  slug?: string;
+  event_slug?: string;
+  condition_id?: string;
   playbook?: {
     api?: string;
     cost?: string;
@@ -44,7 +50,10 @@ type PlaybookResponse = {
 
 const TABS = [
   { id: "overview", label: "Overview" },
+  { id: "live", label: "Live trading" },
+  { id: "paper", label: "Paper trading" },
   { id: "accounts", label: "Top Accounts" },
+  { id: "copy-markets", label: "Copy markets" },
   { id: "markets", label: "Markets" },
   { id: "eda", label: "EDA" },
   { id: "strategies", label: "Strategies" },
@@ -117,9 +126,168 @@ function PriceChart({ points, compact = false }: { points: HistoryPoint[]; compa
   );
 }
 
+function nowEst(): string {
+  const stamp = new Date().toLocaleString("en-US", {
+    timeZone: "America/New_York",
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
+  return `${stamp} EST`;
+}
+
+function dollars(value: unknown): string {
+  if (value === null || value === undefined || value === "") return "--";
+  const number = Number(value);
+  if (Number.isNaN(number)) return String(value);
+  const formatted = Math.abs(number).toLocaleString("en-US", { maximumFractionDigits: 2 });
+  return number < 0 ? `-$${formatted}` : `$${formatted}`;
+}
+
+function asEst(value: unknown): string {
+  if (value === null || value === undefined || value === "") return "";
+  const text = String(value);
+  if (text.includes("EST")) return text;
+  const parsed = new Date(text.includes("T") ? text : text.replace(" ", "T"));
+  if (Number.isNaN(parsed.getTime())) return text;
+  const stamp = parsed.toLocaleString("en-US", {
+    timeZone: "America/New_York",
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
+  return `${stamp} EST`;
+}
+
+function marketStart(market: Loose): string {
+  return asEst(market.started_at_est || market.start_date || market.startDate) || "--";
+}
+
+function marketEnd(market: Loose): string {
+  return asEst(market.ends_at_est || market.end_date || market.endDate) || "--";
+}
+
+function MarketWindow({ market }: { market: Loose }) {
+  return (
+    <div className="muted">
+      Started {marketStart(market)}
+      <br />
+      Ends {marketEnd(market)}
+    </div>
+  );
+}
+
 function shortAddr(addr: string | null | undefined): string {
   if (!addr || addr.length < 12) return addr || "--";
   return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
+}
+
+function AccountBook({ mode, book }: { mode: "live" | "paper"; book: Loose | null }) {
+  const positions: Loose[] = book?.positions || [];
+  const summary = book?.summary;
+  const live = mode === "live";
+  return (
+    <>
+      <div className="grid">
+        <div className="card">
+          <span>Open positions</span>
+          <strong>{summary ? summary.positions : "--"}</strong>
+        </div>
+        <div className="card">
+          <span>Cost</span>
+          <strong>{summary ? dollars(summary.cost_usd) : "--"}</strong>
+        </div>
+        <div className="card">
+          <span>Mark value</span>
+          <strong>{summary ? dollars(summary.value_usd) : "--"}</strong>
+        </div>
+        <div className="card">
+          <span>Unrealized</span>
+          <strong className={Number(summary?.unrealized_usd) < 0 ? "bad" : Number(summary?.unrealized_usd) > 0 ? "good" : ""}>
+            {summary ? dollars(summary.unrealized_usd) : "--"}
+          </strong>
+        </div>
+      </div>
+      <section className="panel">
+        <h2>{live ? "Live account" : "Paper account"}</h2>
+        <p className="muted">
+          {live
+            ? "Open positions on the Kalshi and Polymarket accounts configured for this desk."
+            : "Open paper positions, netted from simulated fills. Copy-watchlist and copy-top-trader fills name the source account."}
+        </p>
+        <p className="muted">{book?.fetched_at_est ? `Updated ${book.fetched_at_est}.` : "Loading the account book."}</p>
+        {Array.isArray(book?.errors) && book.errors.length > 0 ? (
+          <p className="error">{book.errors.join(" ")}</p>
+        ) : null}
+        {book === null ? (
+          <p className="muted">Loading positions.</p>
+        ) : positions.length === 0 ? (
+          <p className="muted">
+            {live
+              ? "No open live positions on this account."
+              : "No open paper positions. Start the paper runner or run a cycle to create some."}
+          </p>
+        ) : (
+          <div className="market-list">
+            <table>
+              <thead>
+                <tr>
+                  <th>Platform</th>
+                  <th>Market</th>
+                  <th>Side</th>
+                  <th>Size</th>
+                  <th>Avg entry</th>
+                  <th>Mark</th>
+                  <th>Cost</th>
+                  <th>Unrealized</th>
+                  {live ? null : <th>Strategy</th>}
+                  {live ? null : <th>Copied from</th>}
+                  <th>Opened</th>
+                </tr>
+              </thead>
+              <tbody>
+                {positions.map((row) => (
+                  <tr key={`${row.platform}-${row.market_id}-${row.side}`}>
+                    <td>{row.platform}</td>
+                    <td>
+                      {row.url ? (
+                        <a className="external" href={row.url} target="_blank" rel="noopener noreferrer">
+                          {row.title}
+                        </a>
+                      ) : (
+                        row.title
+                      )}
+                      <MarketWindow market={row} />
+                    </td>
+                    <td>
+                      {row.direction === "short" ? "Short " : ""}
+                      {String(row.side || "").toUpperCase()}
+                    </td>
+                    <td>{money(row.size)}</td>
+                    <td>{price(row.avg_price)}</td>
+                    <td>{price(row.mark_price)}</td>
+                    <td>{dollars(row.cost_usd)}</td>
+                    <td className={Number(row.unrealized_usd) < 0 ? "bad" : Number(row.unrealized_usd) > 0 ? "good" : ""}>
+                      {dollars(row.unrealized_usd)}
+                    </td>
+                    {live ? null : <td>{row.strategy || "--"}</td>}
+                    {live ? null : <td>{row.copied_account || "—"}</td>}
+                    <td>{row.opened_at_est || "--"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+    </>
+  );
 }
 
 export default function App() {
@@ -128,6 +296,8 @@ export default function App() {
   const [runner, setRunner] = useState<Loose | null>(null);
   const [strategies, setStrategies] = useState<Loose[]>([]);
   const [logs, setLogs] = useState<Loose[]>([]);
+  const [liveBook, setLiveBook] = useState<Loose | null>(null);
+  const [paperBook, setPaperBook] = useState<Loose | null>(null);
   const [favorites, setFavorites] = useState<Loose | null>(null);
   const [backtests, setBacktests] = useState<Loose | null>(null);
   const [charts, setCharts] = useState<Loose | null>(null);
@@ -136,13 +306,15 @@ export default function App() {
   const [cohortFilter, setCohortFilter] = useState("all");
   const [accountPeriod, setAccountPeriod] = useState("ALL");
   const [selectedAddress, setSelectedAddress] = useState("");
+  const [accountPage, setAccountPage] = useState(false);
   const [customWallet, setCustomWallet] = useState("");
   const [copyAmountUsd, setCopyAmountUsd] = useState("100");
-  const [platform, setPlatform] = useState("");
+  const [platform, setPlatform] = useState("polymarket");
   const [family, setFamily] = useState("");
   const [playbooks, setPlaybooks] = useState<PlaybookResponse | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [refreshedAt, setRefreshedAt] = useState("");
   const [catalog, setCatalog] = useState<CatalogResponse | null>(null);
   const [marketQuery, setMarketQuery] = useState("");
   const [marketPage, setMarketPage] = useState(0);
@@ -157,6 +329,11 @@ export default function App() {
   const [latest, setLatest] = useState<Market[]>([]);
   const [latestAt, setLatestAt] = useState("");
   const [histories, setHistories] = useState<Record<string, { window?: string; points: HistoryPoint[]; error?: string }>>({});
+  const [marketDetail, setMarketDetail] = useState<Loose | null>(null);
+  const [detailBusy, setDetailBusy] = useState(false);
+  const [accountTrades, setAccountTrades] = useState<Loose[] | null>(null);
+  const [accountClosed, setAccountClosed] = useState<Loose[] | null>(null);
+  const [accountProfileUrl, setAccountProfileUrl] = useState("");
   const historyRequested = useRef(new Set<string>());
   const pageSize = 50;
 
@@ -181,11 +358,25 @@ export default function App() {
     setCharts(nextCharts);
     if (nextAccounts) {
       setTopAccountsData(nextAccounts);
-      if (!selectedAddress && nextAccounts.accounts?.length > 0) {
-        setSelectedAddress(nextAccounts.accounts[0].address);
-      }
     }
+    setRefreshedAt(nowEst());
     setError("");
+  }
+
+  async function refreshOverview() {
+    setBusy(true);
+    setError("");
+    try {
+      await refresh();
+      const books = await getJson<PlaybookResponse>("/api/markets/playbooks").catch(() => null);
+      if (books) setPlaybooks(books);
+      await loadCatalog(marketPage, true);
+      if (followed.length > 0) await loadLatest(false);
+    } catch (err) {
+      setError(errorMessage(err));
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function loadCatalog(page = marketPage, rebuild = false) {
@@ -201,6 +392,31 @@ export default function App() {
     setCatalog(body);
     return body;
   }
+
+  useEffect(() => {
+    if (tab !== "live" && tab !== "paper") return undefined;
+    let cancelled = false;
+    const path = tab === "live" ? "/api/account/live" : "/api/account/paper";
+    const apply = tab === "live" ? setLiveBook : setPaperBook;
+    const load = () => {
+      getJson(path)
+        .then((body) => {
+          if (!cancelled) apply(body);
+        })
+        .catch((err) => {
+          if (cancelled) return;
+          const message = errorMessage(err);
+          setError(message);
+          apply((current: Loose | null) => current || { positions: [], summary: null, errors: [message] });
+        });
+    };
+    load();
+    const timer = setInterval(load, 15000);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, [tab]);
 
   useEffect(() => {
     refresh().catch((err) => setError(err.message));
@@ -280,7 +496,7 @@ async function act(path: string, body?: Loose) {
       model: "llama3.2:latest",
     });
     if (res?.account?.address) {
-      setSelectedAddress(res.account.address);
+      openAccount(res.account.address);
       if (!addressToAnalyze) setCustomWallet("");
     }
   }
@@ -321,6 +537,187 @@ async function act(path: string, body?: Loose) {
     return `${market.platform}:${market.id}`;
   }
 
+  function walletAddress(value: string) {
+    const match = String(value || "").toLowerCase().match(/0x[a-f0-9]{40}/);
+    return match ? match[0] : String(value || "").toLowerCase();
+  }
+
+  function polymarketProfileUrl(address: string, name?: string) {
+    const handle = String(name || "").trim().replace(/^@/, "");
+    if (/^[A-Za-z0-9_]{2,32}$/.test(handle)) {
+      return `https://polymarket.com/@${handle}`;
+    }
+    return `https://polymarket.com/profile/${walletAddress(address)}`;
+  }
+
+  function openAccount(address: string) {
+    setSelectedAddress(walletAddress(address));
+    setAccountPage(true);
+    setTab("accounts");
+  }
+
+  function closeAccountPage() {
+    setAccountPage(false);
+  }
+
+  function normalizeTitle(value: unknown) {
+    return String(value || "")
+      .trim()
+      .toLowerCase()
+      .replace(/[^\w\s]/g, "")
+      .replace(/\s+/g, " ");
+  }
+
+  function marketMatchesPosition(market: Loose, position: Loose) {
+    const condition = String(market.condition_id || "").toLowerCase();
+    const posCondition = String(position.condition_id || "").toLowerCase();
+    if (condition && posCondition && condition === posCondition) return true;
+    const slugs = [market.slug, market.event_slug, market.id].filter(Boolean).map((item) => String(item).toLowerCase());
+    const posSlugs = [position.slug, position.event_slug].filter(Boolean).map((item) => String(item).toLowerCase());
+    if (slugs.some((slug) => posSlugs.includes(slug))) return true;
+    const marketTitle = normalizeTitle(market.title);
+    const posTitle = normalizeTitle(position.title);
+    return Boolean(marketTitle && posTitle && marketTitle === posTitle);
+  }
+
+  function holdersOnMarket(market: Loose) {
+    const holders: Loose[] = [];
+    rawAccounts.forEach((account) => {
+      (account.open_positions || []).forEach((position: Loose) => {
+        if (!marketMatchesPosition(market, position)) return;
+        holders.push({
+          ...position,
+          trader_address: account.address,
+          trader_name: account.user_name,
+          trader_archetype: account.llm_analysis?.archetype || "",
+          copyability_score: account.llm_analysis?.copyability_score,
+          is_followed_trader: Boolean(account.is_followed),
+          earning_cohort_label: account.earning_cohort_label,
+        });
+      });
+    });
+    return holders.sort((a, b) => Number(b.is_followed_trader) - Number(a.is_followed_trader) || (b.current_value || 0) - (a.current_value || 0));
+  }
+
+  function liveTopAccountMarkets() {
+    const groups = new Map<string, Loose>();
+    rawAccounts.forEach((account) => {
+      (account.open_positions || []).forEach((position: Loose) => {
+        const key = String(position.condition_id || position.slug || position.title || "").toLowerCase();
+        if (!key) return;
+        if (!groups.has(key)) {
+          groups.set(key, {
+            platform: "polymarket",
+            id: position.condition_id || position.slug || position.title,
+            condition_id: position.condition_id,
+            slug: position.slug,
+            title: position.title,
+            end_date: position.end_date,
+            holders: [],
+          });
+        }
+        groups.get(key).holders.push({
+          ...position,
+          trader_address: account.address,
+          trader_name: account.user_name,
+          trader_archetype: account.llm_analysis?.archetype || "",
+          copyability_score: account.llm_analysis?.copyability_score,
+          is_followed_trader: Boolean(account.is_followed),
+          earning_cohort_label: account.earning_cohort_label,
+        });
+      });
+    });
+    return [...groups.values()]
+      .map((item) => ({
+        ...item,
+        holders: item.holders.sort(
+          (a: Loose, b: Loose) => Number(b.is_followed_trader) - Number(a.is_followed_trader) || (b.current_value || 0) - (a.current_value || 0),
+        ),
+      }))
+      .sort((a, b) => b.holders.length - a.holders.length || (b.holders[0]?.current_value || 0) - (a.holders[0]?.current_value || 0));
+  }
+
+  function HolderTable({ holders }: { holders: Loose[] }) {
+    if (holders.length === 0) {
+      return <p className="muted">No investigated top account is in this market right now.</p>;
+    }
+    return (
+      <div className="market-list">
+        <table>
+          <thead>
+            <tr>
+              <th>Account</th>
+              <th>Outcome</th>
+              <th>Their entry</th>
+              <th>Current</th>
+              <th>Drift</th>
+              <th>Size</th>
+              <th>Unrealized</th>
+              <th>Copy</th>
+            </tr>
+          </thead>
+          <tbody>
+            {holders.map((holder, index) => (
+              <tr key={`${holder.trader_address}-${holder.outcome}-${index}`}>
+                <td>
+                  <button className="linkish" onClick={() => openAccount(holder.trader_address)}>
+                    {holder.trader_name}
+                  </button>
+                  <div className="muted">
+                    {holder.is_followed_trader ? "On your copy list" : holder.earning_cohort_label || ""}
+                    {holder.copyability_score ? ` | ${holder.copyability_score}/10` : ""}
+                  </div>
+                </td>
+                <td>{holder.outcome}</td>
+                <td>{price(holder.avg_price)}</td>
+                <td>{price(holder.cur_price)}</td>
+                <td className={holder.price_drift <= 0.03 ? "good" : holder.price_drift > 0.1 ? "bad" : ""}>
+                  {holder.price_drift > 0 ? `+${Number(holder.price_drift).toFixed(3)}` : Number(holder.price_drift || 0).toFixed(3)}
+                </td>
+                <td>${money(holder.current_value)}</td>
+                <td className={holder.cash_pnl >= 0 ? "good" : "bad"}>
+                  ${money(holder.cash_pnl)} ({pct(holder.percent_pnl, 1)})
+                </td>
+                <td>
+                  <button disabled={busy || holder.copyable === false} onClick={() => handleCopyPosition(holder)}>
+                    {holder.copyable === false ? "Settling" : `Paper copy ($${copyAmountUsd})`}
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
+  }
+
+  async function openMarketDetail(market: Market) {
+    setTab("markets");
+    setDetailBusy(true);
+    setMarketDetail({
+      platform: market.platform,
+      id: market.id,
+      title: market.title,
+      playbook: market.playbook,
+      started_at_est: market.started_at_est,
+      ends_at_est: market.ends_at_est || market.end_date,
+    });
+    try {
+      const body = await getJson<Loose>(
+        `/api/markets/detail?platform=${encodeURIComponent(market.platform)}&id=${encodeURIComponent(market.id)}`,
+      );
+      setMarketDetail({ ...body, playbook: market.playbook });
+      setHistories((current) => ({
+        ...current,
+        [marketKey(market)]: { window: body.window, points: body.points || [] },
+      }));
+    } catch (err) {
+      setError(errorMessage(err));
+    } finally {
+      setDetailBusy(false);
+    }
+  }
+
   async function loadHistory(market: Market) {
     const key = marketKey(market);
     const body = await getJson<{ window?: string; points?: HistoryPoint[] }>(
@@ -341,7 +738,13 @@ async function act(path: string, body?: Loose) {
       if (current.some((item) => item.platform === market.platform && item.id === market.id)) {
         return current.filter((item) => !(item.platform === market.platform && item.id === market.id));
       }
-      return [...current, { platform: market.platform, id: market.id, title: market.title || market.id }];
+      return [...current, {
+        platform: market.platform,
+        id: market.id,
+        title: market.title || market.id,
+        started_at_est: market.started_at_est,
+        ends_at_est: market.ends_at_est,
+      }];
     });
   }
 
@@ -359,15 +762,19 @@ async function act(path: string, body?: Loose) {
           platform: market.platform,
           id: market.id,
           title: market.title || market.id,
+          started_at_est: market.started_at_est,
+          ends_at_est: market.ends_at_est,
         })),
       ];
     });
   }
 
-  async function loadLatest() {
+  async function loadLatest(manageBusy = true) {
     if (followed.length === 0) return;
-    setBusy(true);
-    setError("");
+    if (manageBusy) {
+      setBusy(true);
+      setError("");
+    }
     try {
       const titles = new Map(followed.map((item) => [marketKey(item), item.title]));
       const collected: Market[] = [];
@@ -394,7 +801,7 @@ async function act(path: string, body?: Loose) {
     } catch (err) {
       setError(errorMessage(err));
     } finally {
-      setBusy(false);
+      if (manageBusy) setBusy(false);
     }
   }
 
@@ -430,6 +837,7 @@ async function act(path: string, body?: Loose) {
   const pageCount = Math.max(1, Math.ceil(catalogTotal / pageSize));
 
   const rawAccounts: Loose[] = Array.isArray(topAccountsData?.accounts) ? topAccountsData.accounts : [];
+  const liveAccountMarkets = liveTopAccountMarkets();
   const filteredAccounts = rawAccounts
     .filter((acc) => {
       if (cohortFilter === "pct") return acc.earning_cohort === "pct_earner" || acc.earning_cohort === "both";
@@ -454,11 +862,44 @@ async function act(path: string, body?: Loose) {
     });
 
   const selectedAccount =
-    rawAccounts.find((a) => a.address === selectedAddress) || filteredAccounts[0] || rawAccounts[0] || null;
+    rawAccounts.find((a) => walletAddress(a.address) === walletAddress(selectedAddress)) || null;
   const synthesis = topAccountsData?.synthesis;
   const copySignals: Loose[] = Array.isArray(topAccountsData?.copy_signals) ? topAccountsData.copy_signals : [];
   const paperCopyTrades: Loose[] = Array.isArray(topAccountsData?.paper_copy_trades) ? topAccountsData.paper_copy_trades : [];
   const followedAccountsCount = rawAccounts.filter((a) => a.is_followed).length;
+
+  useEffect(() => {
+    const address = selectedAddress || selectedAccount?.address;
+    if (tab !== "accounts" || !accountPage || !address) {
+      return undefined;
+    }
+    let cancelled = false;
+    setAccountTrades(null);
+    setAccountClosed(null);
+    const wallet = walletAddress(address);
+    setAccountProfileUrl(polymarketProfileUrl(wallet, selectedAccount?.user_name));
+    const params = new URLSearchParams({ address: wallet, limit: "120" });
+    if (selectedAccount?.user_name) params.set("name", selectedAccount.user_name);
+    getJson<{ trades?: Loose[]; closed?: Loose[]; profile_url?: string }>(
+      `/api/accounts/trades?${params}`,
+    )
+      .then((body) => {
+        if (cancelled) return;
+        setAccountTrades(body.trades || []);
+        setAccountClosed(body.closed || []);
+        if (body.profile_url) setAccountProfileUrl(body.profile_url);
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setAccountTrades([]);
+          setAccountClosed([]);
+          setError(errorMessage(err));
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [tab, accountPage, selectedAddress, selectedAccount?.address]);
 
   return (
     <div className="app">
@@ -516,7 +957,11 @@ async function act(path: string, body?: Loose) {
               <button disabled={busy} onClick={() => act("/api/runner/stop")}>
                 Stop
               </button>
+              <button disabled={busy} onClick={() => refreshOverview()}>
+                {busy ? "Refreshing" : "Refresh"}
+              </button>
             </div>
+            <p className="muted">{refreshedAt ? `Updated ${refreshedAt}.` : "Waiting for the first update."}</p>
             <p className="muted">
               {status
                 ? `Kalshi credentials ${status.kalshi_configured ? "are set" : "are missing"}. Polymarket credentials ${status.polymarket_configured ? "are set" : "are missing"}.`
@@ -535,7 +980,193 @@ async function act(path: string, body?: Loose) {
         </>
       )}
 
-      {tab === "accounts" && (
+      {(tab === "live" || tab === "paper") && (
+        <AccountBook
+          mode={tab}
+          book={tab === "live" ? liveBook : paperBook}
+        />
+      )}
+
+      {tab === "accounts" && accountPage && (
+        <section className="panel" id="account-page">
+          <div className="inspector-header">
+            <div>
+              <h2>{selectedAccount?.user_name || selectedAddress}</h2>
+              <p className="muted">{walletAddress(selectedAccount?.address || selectedAddress)}</p>
+            </div>
+            <div className="row">
+              <button onClick={closeAccountPage}>Back to accounts</button>
+              {selectedAccount ? (
+                <button onClick={() => handleToggleWatchlist(selectedAccount)}>
+                  {selectedAccount.is_followed ? "Remove from Copy Watchlist" : "Add to Copy Watchlist"}
+                </button>
+              ) : null}
+              <button disabled={busy} onClick={() => handleAnalyzeWallet(selectedAddress)}>
+                Re-run LLM Analysis
+              </button>
+              <a
+                className="external"
+                href={polymarketProfileUrl(selectedAddress, selectedAccount?.user_name)}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Open on Polymarket
+              </a>
+            </div>
+          </div>
+          {selectedAccount ? (
+            <>
+              <div className="grid">
+                <div className="card">
+                  <span>LLM Strategy Archetype</span>
+                  <strong>{selectedAccount.llm_analysis?.archetype || "--"}</strong>
+                  <span className="muted">Edge: {selectedAccount.llm_analysis?.edge_source || "--"}</span>
+                </div>
+                <div className="card">
+                  <span>Return on Volume vs Realized ROI</span>
+                  <strong className="good">
+                    {pct(selectedAccount.return_on_volume_pct, 2)} / {pct(selectedAccount.realized_roi_pct, 1)}
+                  </strong>
+                  <span className="muted">
+                    ${money(selectedAccount.pnl)} net on ${money(selectedAccount.volume)} volume
+                  </span>
+                </div>
+                <div className="card">
+                  <span>Win Rate</span>
+                  <strong>
+                    {pct(selectedAccount.win_rate_pct, 1)} ({selectedAccount.wins}W/{selectedAccount.losses}L)
+                  </strong>
+                </div>
+                <div className="card">
+                  <span>Copyability</span>
+                  <strong>{selectedAccount.llm_analysis?.copyability_score || "--"}/10</strong>
+                </div>
+              </div>
+              <div className="llm-box">
+                <p>
+                  <strong>LLM Strategy Summary:</strong> {selectedAccount.llm_analysis?.strategy_summary}
+                </p>
+                <p>
+                  <strong>Copy Recommendation:</strong> {selectedAccount.llm_analysis?.copy_recommendation}
+                </p>
+              </div>
+            </>
+          ) : (
+            <p className="muted">Loading this wallet from Polymarket. The live bets below do not need a prior investigation.</p>
+          )}
+
+          <div className="subpanel">
+            <h2>Previous bets</h2>
+            {accountClosed === null ? (
+              <p className="muted">Loading closed positions.</p>
+            ) : accountClosed.length === 0 ? (
+              <p className="muted">No closed positions returned for this wallet.</p>
+            ) : (
+              <div className="market-list">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Closed (EST)</th>
+                      <th>Market</th>
+                      <th>Outcome</th>
+                      <th>Avg entry</th>
+                      <th>Cost</th>
+                      <th>Realized PnL</th>
+                      <th>ROI</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {accountClosed.map((pos, index) => (
+                      <tr key={`${pos.title}-${pos.closed_at_est}-${index}`}>
+                        <td>{pos.closed_at_est || "--"}</td>
+                        <td>
+                          {pos.url ? (
+                            <a className="external" href={pos.url} target="_blank" rel="noreferrer">
+                              {pos.title}
+                            </a>
+                          ) : (
+                            pos.title
+                          )}
+                          <MarketWindow market={pos} />
+                        </td>
+                        <td>{pos.outcome || "--"}</td>
+                        <td>{price(pos.avg_price)}</td>
+                        <td>${money(pos.cost_usd)}</td>
+                        <td className={pos.realized_pnl >= 0 ? "good" : "bad"}>${money(pos.realized_pnl)}</td>
+                        <td className={(pos.roi_pct || 0) >= 0 ? "good" : "bad"}>{pos.roi_pct == null ? "--" : pct(pos.roi_pct, 1)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          <div className="subpanel">
+            <h2>Recent trades</h2>
+            {accountTrades === null ? (
+              <p className="muted">Loading trades from Polymarket.</p>
+            ) : accountTrades.length === 0 ? (
+              <p className="muted">No recent trades returned for this wallet.</p>
+            ) : (
+              <div className="market-list">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Time (EST)</th>
+                      <th>Market</th>
+                      <th>Side</th>
+                      <th>Outcome</th>
+                      <th>Price</th>
+                      <th>Size</th>
+                      <th>Notional</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {accountTrades.map((trade, index) => (
+                      <tr key={`${trade.title}-${trade.time_est}-${index}`}>
+                        <td>{trade.time_est || "--"}</td>
+                        <td>
+                          {trade.url ? (
+                            <a className="external" href={trade.url} target="_blank" rel="noreferrer">
+                              {trade.title}
+                            </a>
+                          ) : (
+                            trade.title
+                          )}
+                        </td>
+                        <td>{trade.side || "--"}</td>
+                        <td>{trade.outcome || "--"}</td>
+                        <td>{price(trade.price)}</td>
+                        <td>{money(trade.size)}</td>
+                        <td>${money(trade.notional)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          {selectedAccount?.open_positions?.length > 0 && (
+            <div className="subpanel">
+              <h2>Open positions</h2>
+              <HolderTable
+                holders={selectedAccount.open_positions.map((pos: Loose) => ({
+                  ...pos,
+                  trader_address: selectedAccount.address,
+                  trader_name: selectedAccount.user_name,
+                  is_followed_trader: Boolean(selectedAccount.is_followed),
+                  earning_cohort_label: selectedAccount.earning_cohort_label,
+                  copyability_score: selectedAccount.llm_analysis?.copyability_score,
+                }))}
+              />
+            </div>
+          )}
+        </section>
+      )}
+
+      {tab === "accounts" && !accountPage && (
         <>
           <div className="grid">
             <div className="card">
@@ -731,8 +1362,8 @@ async function act(path: string, body?: Loose) {
                     const llm = acc.llm_analysis || {};
                     const isSelected = selectedAccount?.address === acc.address;
                     return (
-                      <tr key={acc.address} className={isSelected ? "selected-row" : ""}>
-                        <td>
+                      <tr key={acc.address} className={isSelected ? "selected-row pick" : "pick"} onClick={() => openAccount(acc.address)}>
+                        <td onClick={(event) => event.stopPropagation()}>
                           <input
                             type="checkbox"
                             checked={Boolean(acc.is_followed)}
@@ -741,7 +1372,9 @@ async function act(path: string, body?: Loose) {
                           />
                         </td>
                         <td>
-                          <strong>{acc.user_name}</strong>
+                          <button className="linkish" onClick={() => openAccount(acc.address)}>
+                            {acc.user_name}
+                          </button>
                           <div className="muted">{shortAddr(acc.address)}</div>
                         </td>
                         <td>
@@ -782,9 +1415,7 @@ async function act(path: string, body?: Loose) {
                           {llm.copyability_score ? `${llm.copyability_score}/10 (${llm.copyability_label})` : "--"}
                         </td>
                         <td>
-                          <button onClick={() => setSelectedAddress(acc.address)}>
-                            {isSelected ? "Viewing" : "Inspect"}
-                          </button>
+                          <button onClick={() => openAccount(acc.address)}>Open</button>
                         </td>
                       </tr>
                     );
@@ -793,209 +1424,6 @@ async function act(path: string, body?: Loose) {
               </table>
             </div>
           </section>
-
-          {selectedAccount && (
-            <section className="panel">
-              <div className="inspector-header">
-                <div>
-                  <h2>
-                    Account Strategy &amp; Pattern Dossier: {selectedAccount.user_name} ({selectedAccount.address})
-                  </h2>
-                  <p className="muted">
-                    {selectedAccount.earning_cohort_label} | Analyzed {selectedAccount.analyzed_at_est || "--"} via{" "}
-                    {selectedAccount.llm_analysis?.llm_model || "LLM"} | Open Positions: {selectedAccount.open_positions_count} ($
-                    {money(selectedAccount.open_value_usd)})
-                  </p>
-                </div>
-                <div className="row">
-                  <button onClick={() => handleToggleWatchlist(selectedAccount)}>
-                    {selectedAccount.is_followed ? "Remove from Copy Watchlist" : "Add to Copy Watchlist"}
-                  </button>
-                  <button disabled={busy} onClick={() => handleAnalyzeWallet(selectedAccount.address)}>
-                    Re-run LLM Analysis
-                  </button>
-                </div>
-              </div>
-
-              <div className="grid">
-                <div className="card">
-                  <span>LLM Strategy Archetype</span>
-                  <strong>{selectedAccount.llm_analysis?.archetype || "--"}</strong>
-                  <span className="muted">Edge: {selectedAccount.llm_analysis?.edge_source || "--"}</span>
-                </div>
-                <div className="card">
-                  <span>Return on Volume vs Realized ROI</span>
-                  <strong className="good">
-                    {pct(selectedAccount.return_on_volume_pct, 2)} / {pct(selectedAccount.realized_roi_pct, 1)}
-                  </strong>
-                  <span className="muted">
-                    ${money(selectedAccount.pnl)} net on ${money(selectedAccount.volume)} volume
-                  </span>
-                </div>
-                <div className="card">
-                  <span>Win Rate &amp; Profit Factor</span>
-                  <strong>
-                    {pct(selectedAccount.win_rate_pct, 1)} (PF {selectedAccount.profit_factor ?? "--"})
-                  </strong>
-                  <span className="muted">
-                    Avg Win: ${money(selectedAccount.avg_win_usd)} | Avg Loss: ${money(selectedAccount.avg_loss_usd)}
-                  </span>
-                </div>
-                <div className="card">
-                  <span>Copyability Assessment</span>
-                  <strong
-                    className={
-                      (selectedAccount.llm_analysis?.copyability_score || 0) >= 7
-                        ? "good"
-                        : (selectedAccount.llm_analysis?.copyability_score || 0) <= 3
-                          ? "bad"
-                          : ""
-                    }
-                  >
-                    {selectedAccount.llm_analysis?.copyability_score || "--"}/10 (
-                    {selectedAccount.llm_analysis?.copyability_label || "--"})
-                  </strong>
-                  <span className="muted">
-                    Hedged events: {pct(selectedAccount.patterns?.hedged_events_pct, 1)} | Splits/Merges:{" "}
-                    {pct(selectedAccount.patterns?.split_merge_pct, 1)}
-                  </span>
-                </div>
-              </div>
-
-              <div className="llm-box">
-                <p>
-                  <strong>LLM Strategy Summary:</strong> {selectedAccount.llm_analysis?.strategy_summary}
-                </p>
-                <p>
-                  <strong>Copy Recommendation:</strong> {selectedAccount.llm_analysis?.copy_recommendation}
-                </p>
-                <div>
-                  <strong>Detected Trading Patterns:</strong>
-                  <ul className="findings-list">
-                    {(selectedAccount.llm_analysis?.pattern_findings || []).map((item: string, index: number) => (
-                      <li key={index}>{item}</li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-
-              <div className="grid compact-grid">
-                <div className="card">
-                  <span>Entry Price Distribution</span>
-                  <strong>Avg {price(selectedAccount.patterns?.avg_entry_price)}</strong>
-                  <span className="muted">
-                    Longshot (&lt;0.20): {pct(selectedAccount.patterns?.longshot_pct)} | Mid (0.20-0.80):{" "}
-                    {pct(selectedAccount.patterns?.mid_pct)} | Favorite (&gt;0.80): {pct(selectedAccount.patterns?.favorite_pct)}
-                  </span>
-                </div>
-                <div className="card">
-                  <span>Side &amp; Outcome Bias</span>
-                  <strong>
-                    Yes/Over {pct(selectedAccount.patterns?.yes_pct)} vs No/Under {pct(selectedAccount.patterns?.no_pct)}
-                  </strong>
-                  <span className="muted">
-                    Median trade: ${money(selectedAccount.patterns?.median_trade_usdc)} | Median position: $
-                    {money(selectedAccount.median_position_cost_usd)}
-                  </span>
-                </div>
-                <div className="card">
-                  <span>Topic Concentration</span>
-                  <strong>{(selectedAccount.patterns?.dominant_topic || "other").toUpperCase()}</strong>
-                  <span className="muted">
-                    Politics {pct(selectedAccount.patterns?.topic_shares?.politics)} | Sports{" "}
-                    {pct(selectedAccount.patterns?.topic_shares?.sports)} | Crypto{" "}
-                    {pct(selectedAccount.patterns?.topic_shares?.crypto)} | Macro{" "}
-                    {pct(selectedAccount.patterns?.topic_shares?.macro)}
-                  </span>
-                </div>
-              </div>
-
-              {selectedAccount.open_positions?.length > 0 && (
-                <div className="subpanel">
-                  <h2>Current Open Positions ({selectedAccount.user_name})</h2>
-                  <div className="market-list">
-                    <table>
-                      <thead>
-                        <tr>
-                          <th>Market</th>
-                          <th>Outcome</th>
-                          <th>Avg Entry</th>
-                          <th>Current</th>
-                          <th>Drift</th>
-                          <th>Current Value</th>
-                          <th>Unrealized PnL</th>
-                          <th>Copy</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {selectedAccount.open_positions.map((pos: Loose, idx: number) => (
-                          <tr key={`${pos.condition_id}-${idx}`}>
-                            <td>
-                              {pos.title}
-                              <div className="muted">{pos.topic}</div>
-                            </td>
-                            <td>{pos.outcome}</td>
-                            <td>{price(pos.avg_price)}</td>
-                            <td>{price(pos.cur_price)}</td>
-                            <td className={pos.price_drift <= 0.03 ? "good" : pos.price_drift > 0.1 ? "bad" : ""}>
-                              {pos.price_drift > 0 ? `+${pos.price_drift.toFixed(3)}` : pos.price_drift.toFixed(3)}
-                            </td>
-                            <td>${money(pos.current_value)}</td>
-                            <td className={pos.cash_pnl >= 0 ? "good" : "bad"}>
-                              ${money(pos.cash_pnl)} ({pct(pos.percent_pnl, 1)})
-                            </td>
-                            <td>
-                              <button
-                                disabled={busy || !pos.copyable}
-                                onClick={() => handleCopyPosition(pos, selectedAccount)}
-                              >
-                                {pos.copyable ? `Paper Copy ($${copyAmountUsd})` : "Settling"}
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-
-              {selectedAccount.top_closed_wins?.length > 0 && (
-                <div className="subpanel">
-                  <h2>Notable Resolved Positions ({selectedAccount.user_name})</h2>
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>Market</th>
-                        <th>Outcome</th>
-                        <th>Avg Entry</th>
-                        <th>Position Cost</th>
-                        <th>Realized PnL</th>
-                        <th>Position ROI</th>
-                        <th>Closed (EST)</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {[
-                        ...(selectedAccount.top_closed_wins || []),
-                        ...(selectedAccount.top_closed_losses || []).slice(0, 2),
-                      ].map((pos: Loose, idx: number) => (
-                        <tr key={`${pos.condition_id}-${idx}`}>
-                          <td>{pos.title}</td>
-                          <td>{pos.outcome}</td>
-                          <td>{price(pos.avg_price)}</td>
-                          <td>${money(pos.cost_usd)}</td>
-                          <td className={pos.realized_pnl >= 0 ? "good" : "bad"}>${money(pos.realized_pnl)}</td>
-                          <td className={pos.roi_pct >= 0 ? "good" : "bad"}>{pct(pos.roi_pct, 1)}</td>
-                          <td>{pos.closed_at_est || "--"}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </section>
-          )}
 
           <section className="panel">
             <h2>Actionable Copy Signals Across Top Accounts</h2>
@@ -1031,6 +1459,7 @@ async function act(path: string, body?: Loose) {
                         </td>
                         <td>
                           {sig.title}
+                          <MarketWindow market={sig} />
                           <div className="muted">{sig.recommended_action}</div>
                         </td>
                         <td>{sig.outcome}</td>
@@ -1090,8 +1519,46 @@ async function act(path: string, body?: Loose) {
         </>
       )}
 
+      {tab === "copy-markets" && (
+        <section className="panel">
+          <h2>Markets with top accounts</h2>
+          <p className="muted">
+            Live Polymarket contracts that an investigated top account is in right now. Open the market, follow it, or paper-copy their side.
+          </p>
+          {liveAccountMarkets.length === 0 ? (
+            <p className="muted">No open positions from the current top-account investigation. Refresh the investigation on Top Accounts if this is empty.</p>
+          ) : (
+            liveAccountMarkets.map((item) => (
+              <div className="subpanel" key={`${item.condition_id || item.slug || item.title}`}>
+                <div className="row">
+                  <button className="linkish" onClick={() => openMarketDetail(item)}>
+                    {item.title}
+                  </button>
+                  <MarketWindow market={item} />
+                  <span className="muted">{item.holders.length} account{item.holders.length === 1 ? "" : "s"}</span>
+                  <button onClick={() => toggleFollow(item)}>
+                    {isFollowed(item) ? "Unfollow" : "Follow"}
+                  </button>
+                  {item.slug ? (
+                    <a className="external" href={`https://polymarket.com/event/${item.slug}`} target="_blank" rel="noopener noreferrer">
+                      Open market
+                    </a>
+                  ) : null}
+                </div>
+                <HolderTable holders={item.holders} />
+              </div>
+            ))
+          )}
+        </section>
+      )}
+
       {tab === "markets" && (
         <>
+          <section className="panel">
+            <p className="muted">
+              Markets that top accounts are currently in live on the <button className="linkish" onClick={() => setTab("copy-markets")}>Copy markets</button> tab.
+            </p>
+          </section>
           <section className="panel">
             <div className="choice-block">
               <p className="choice-label">Venue</p>
@@ -1152,7 +1619,7 @@ async function act(path: string, body?: Loose) {
                   setMarketPage(0);
                 }}
               />
-              <button disabled={busy || followed.length === 0} onClick={loadLatest}>
+              <button disabled={busy || followed.length === 0} onClick={() => loadLatest()}>
                 Get latest data ({followed.length})
               </button>
               <button
@@ -1166,7 +1633,7 @@ async function act(path: string, body?: Loose) {
               {catalog?.status === "loading"
                 ? `Loading every open market. ${catalog.loaded || 0} found so far.`
                 : catalog?.fetched_at_est
-                  ? `${catalogTotal} markets in this view. Catalog as of ${catalog.fetched_at_est}. Click a row to follow it, then get the latest quotes.`
+                  ? `${catalogTotal} markets in this view. Catalog as of ${catalog.fetched_at_est}. Check a row to follow it. Click the title for the chart and the live market page.`
                   : "Loading the market catalog."}
             </p>
             {catalog?.status === "ready" && catalogMarkets.length === 0 ? (
@@ -1195,7 +1662,10 @@ async function act(path: string, body?: Loose) {
                         <th>Follow</th>
                         <th>Platform</th>
                         <th>Market</th>
+                        <th>Started</th>
+                        <th>Ends</th>
                         <th>Volume</th>
+                        <th>Top accounts in</th>
                         <th>Yes chart</th>
                         <th>Public API</th>
                         <th>Cost</th>
@@ -1205,11 +1675,11 @@ async function act(path: string, body?: Loose) {
                     <tbody>
                       {catalogMarkets.map((market) => {
                         const followedRow = isFollowed(market);
+                        const holders = holdersOnMarket(market);
                         return (
                         <tr
                           key={marketKey(market)}
                           className={followedRow ? "pick followed" : "pick"}
-                          onClick={() => toggleFollow(market)}
                         >
                           <td onClick={(event) => event.stopPropagation()}>
                             <input
@@ -1221,10 +1691,22 @@ async function act(path: string, body?: Loose) {
                           </td>
                           <td>{market.platform}</td>
                           <td>
-                            {market.title || market.id}
+                            <button className="linkish" onClick={() => openMarketDetail(market)}>
+                              {market.title || market.id}
+                            </button>
                             <div className="muted">{market.id}</div>
                           </td>
+                          <td>{marketStart(market)}</td>
+                          <td>{marketEnd(market)}</td>
                           <td>{money(market.volume)}</td>
+                          <td>
+                            {holders.length === 0 ? (
+                              <span className="muted">--</span>
+                            ) : (
+                              holders.slice(0, 3).map((holder) => holder.trader_name).join(", ") +
+                              (holders.length > 3 ? ` +${holders.length - 3}` : "")
+                            )}
+                          </td>
                           <td onClick={(event) => event.stopPropagation()}>
                             {histories[marketKey(market)]?.error ? (
                               <span className="muted">Chart unavailable</span>
@@ -1247,6 +1729,76 @@ async function act(path: string, body?: Loose) {
               </>
             ) : null}
           </section>
+          {marketDetail ? (
+            <section className="panel">
+              <div className="inspector-header">
+                <div>
+                  <h2>{marketDetail.title || marketDetail.id}</h2>
+                  <p className="muted">
+                    {marketDetail.platform} | {marketDetail.id}
+                    {` | Started ${marketStart(marketDetail)} | Ends ${marketEnd(marketDetail)}`}
+                    {marketDetail.fetched_at_est ? ` | As of ${marketDetail.fetched_at_est}` : ""}
+                  </p>
+                </div>
+                <div className="row">
+                  <button onClick={() => toggleFollow(marketDetail as Market)}>
+                    {isFollowed(marketDetail as Market) ? "Unfollow" : "Follow"}
+                  </button>
+                  {marketDetail.url ? (
+                    <a className="external" href={marketDetail.url} target="_blank" rel="noreferrer">
+                      {marketDetail.url_label || "Open market"}
+                    </a>
+                  ) : null}
+                  <button onClick={() => setMarketDetail(null)}>Close</button>
+                </div>
+              </div>
+              {detailBusy ? <p className="muted">Loading market detail and price history.</p> : null}
+              <div className="grid">
+                <div className="card">
+                  <span>Yes</span>
+                  <strong>{price(marketDetail.yes_price)}</strong>
+                  <span className="muted">
+                    {marketDetail.yes_bid != null ? `Bid ${price(marketDetail.yes_bid)} / Ask ${price(marketDetail.yes_ask)}` : marketDetail.status || ""}
+                  </span>
+                </div>
+                <div className="card">
+                  <span>Volume</span>
+                  <strong>{money(marketDetail.volume)}</strong>
+                </div>
+                <div className="card">
+                  <span>Chart window</span>
+                  <strong>{marketDetail.window || "--"}</strong>
+                </div>
+              </div>
+              <PriceChart points={marketDetail.points || []} />
+              {Array.isArray(marketDetail.outcomes) && marketDetail.outcomes.length > 0 ? (
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Outcome</th>
+                      <th>Price</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {marketDetail.outcomes.map((outcome: Loose) => (
+                      <tr key={outcome.name}>
+                        <td>{outcome.name}</td>
+                        <td>{price(outcome.price)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : null}
+              {marketDetail.description ? <p className="detail-copy">{marketDetail.description}</p> : null}
+              <div className="subpanel">
+                <h2>Top accounts in this market</h2>
+                <HolderTable holders={holdersOnMarket(marketDetail)} />
+              </div>
+              {marketDetail.playbook?.strategy ? (
+                <p className="muted">{marketDetail.playbook.strategy}</p>
+              ) : null}
+            </section>
+          ) : null}
           <section className="panel">
             <h2>Latest data</h2>
             {latest.length === 0 ? (
@@ -1259,10 +1811,14 @@ async function act(path: string, body?: Loose) {
                   return (
                     <div className="latest-card" key={marketKey(market)}>
                       <div className="row">
-                        <strong>{market.title || market.id}</strong>
+                        <button className="linkish" onClick={() => openMarketDetail(market)}>
+                          {market.title || market.id}
+                        </button>
                         <span className="muted">{market.platform}</span>
                         <span>Yes {price(market.yes_price)}</span>
                         <span>Volume {money(market.volume)}</span>
+                        <span className="muted">Started {marketStart(market)}</span>
+                        <span className="muted">Ends {marketEnd(market)}</span>
                         <span className="muted">{history?.window || market.fetched_at_est || ""}</span>
                       </div>
                       {history?.error ? <p className="muted">Chart unavailable</p> : <PriceChart points={history?.points || []} />}
@@ -1275,7 +1831,7 @@ async function act(path: string, body?: Loose) {
         </>
       )}
 
-      {tab === "eda" && <EdaBoard charts={charts} accounts={topAccountsData} />}
+      {tab === "eda" && <EdaBoard charts={charts} accounts={topAccountsData} onOpenAccount={(acc) => openAccount(acc.address)} />}
 
       {tab === "eda" && backtests && (
         <section className="panel">

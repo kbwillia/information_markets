@@ -400,7 +400,7 @@ def analyze_wallet_quantitatively(
                 "current_value": round(cur_val, 2),
                 "cash_pnl": round(cash_pnl, 2),
                 "percent_pnl": round(pct_pnl, 2),
-                "end_date": pos.get("endDate") or "",
+                "end_date": format_ts_est(pos.get("endDate")) or "",
                 "copyable": copyable,
             }
         )
@@ -569,7 +569,7 @@ def analyze_wallet_quantitatively(
         },
         "top_closed_wins": top_wins,
         "top_closed_losses": top_losses,
-        "open_positions": open_formatted[:15],
+        "open_positions": open_formatted[:40],
     }
 
 
@@ -670,6 +670,271 @@ def _deterministic_strategy_fallback(profile: Dict[str, Any]) -> Dict[str, Any]:
         "copyability_label": copy_label,
         "llm_model": "quantitative-baseline",
     }
+
+
+# Public feeds that match how a topic is usually priced. These are research
+# hypotheses, not proof that a wallet subscribed to them.
+TOPIC_INFORMATION_SOURCES: Dict[str, List[Dict[str, str]]] = {
+    "sports": [
+        {
+            "label": "The Odds API / sportsbook lines",
+            "api": "https://the-odds-api.com",
+            "why": "Sharp sports wallets often sit near consensus book prices, then fade Polymarket when it lags.",
+        },
+        {
+            "label": "ESPN / official league score APIs",
+            "api": "https://site.api.espn.com/apis/site/v2/sports",
+            "why": "Live score state is the usual trigger for late in-game bets.",
+        },
+        {
+            "label": "Polymarket CLOB prices-history",
+            "api": "https://clob.polymarket.com/prices-history",
+            "why": "Mean-reversion bots watch their own book's last mid versus a sportsbook implied.",
+        },
+    ],
+    "politics": [
+        {
+            "label": "FiveThirtyEight / 538 forecast dumps",
+            "api": "https://projects.fivethirtyeight.com",
+            "why": "Election favorites often track published model probabilities more than news headlines.",
+        },
+        {
+            "label": "PredictIt / Kalshi same-question books",
+            "api": "https://www.predictit.org/api  and  https://api.elections.kalshi.com",
+            "why": "Cross-venue spreads on the same race are a common arb source.",
+        },
+        {
+            "label": "AP / Decision Desk HQ election calls",
+            "api": "wire / DDHQ live",
+            "why": "Resolution-adjacent wallets trade immediately after an official call.",
+        },
+    ],
+    "crypto": [
+        {
+            "label": "Binance / Coinbase spot + funding",
+            "api": "https://api.binance.com  /  Coinbase exchange",
+            "why": "Crypto-threshold markets are usually a delayed copy of spot and perp funding.",
+        },
+        {
+            "label": "DefiLlama / Dune dashboards",
+            "api": "https://api.llama.fi",
+            "why": "TVL and unlock calendars show up in protocol-specific markets.",
+        },
+        {
+            "label": "Polymarket Gamma events + CLOB",
+            "api": "https://gamma-api.polymarket.com  /  https://clob.polymarket.com",
+            "why": "Inventory bots only need the public book and event metadata.",
+        },
+    ],
+    "culture": [
+        {
+            "label": "Box Office Mojo / The Numbers",
+            "api": "https://www.the-numbers.com",
+            "why": "Movie and award markets lean on weekend gross prints.",
+        },
+        {
+            "label": "Wikipedia pageviews / Google Trends",
+            "api": "https://wikimedia.org/api/rest_v1/metrics/pageviews",
+            "why": "Attention spikes often lead culture-contract prices by hours to days.",
+        },
+        {
+            "label": "Official awards / chart lists",
+            "api": "Billboard, Oscars, RIAA",
+            "why": "Resolution is usually a published list, so some wallets only trade after the leak window.",
+        },
+    ],
+    "economics": [
+        {
+            "label": "FRED / BLS / BEA prints",
+            "api": "https://api.stlouisfed.org  /  BLS public data",
+            "why": "CPI, jobs, and GDP markets are almost entirely print-vs-consensus trades.",
+        },
+        {
+            "label": "Atlanta Fed GDPNow / Cleveland Fed nowcasts",
+            "api": "https://www.atlantafed.org/cqer/research/gdpnow",
+            "why": "Nowcast revisions move these contracts before the official release.",
+        },
+        {
+            "label": "CME FedWatch",
+            "api": "CME FedWatch tool",
+            "why": "Rate-decision markets usually shadow SOFR / Fed funds futures.",
+        },
+    ],
+    "science": [
+        {
+            "label": "CDC / WHO situation reports",
+            "api": "https://data.cdc.gov",
+            "why": "Outbreak and health markets reprice on official case updates.",
+        },
+        {
+            "label": "arXiv / Nature news",
+            "api": "https://export.arxiv.org/api",
+            "why": "Science-milestone markets move on papers and agency announcements.",
+        },
+        {
+            "label": "NOAA / USGS feeds",
+            "api": "https://api.weather.gov  /  USGS",
+            "why": "Weather and disaster contracts are feed-driven.",
+        },
+    ],
+    "other": [
+        {
+            "label": "Polymarket Data API (positions, activity, trades)",
+            "api": DATA_API,
+            "why": "Any copier can reconstruct this wallet from the same public endpoints we use.",
+        },
+        {
+            "label": "Gamma market catalog",
+            "api": "https://gamma-api.polymarket.com/markets",
+            "why": "New listings and condition IDs are how bots attach to a question.",
+        },
+        {
+            "label": "Kalshi trade API (same family)",
+            "api": "https://api.elections.kalshi.com/trade-api/v2",
+            "why": "If the same question exists on Kalshi, a bot can arb the pair.",
+        },
+    ],
+}
+
+
+def classify_operator(profile: Dict[str, Any]) -> Dict[str, Any]:
+    p = profile.get("patterns") or {}
+    vol = float(profile.get("volume") or 0)
+    rov = float(profile.get("return_on_volume_pct") or 0)
+    split = float(p.get("split_merge_pct") or 0)
+    hedged = float(p.get("hedged_events_pct") or 0)
+    trade_pct = float(p.get("trade_act_pct") or 0)
+    median = float(p.get("median_trade_usdc") or 0)
+    closed = int(profile.get("closed_sampled") or 0)
+    open_n = int(profile.get("open_positions_count") or 0)
+    reasons: List[str] = []
+    bot = 0
+    human = 0
+
+    if split >= 8:
+        bot += 28
+        reasons.append(f"{split:.1f}% of activity is split/merge. That is inventory plumbing, not a discretionary bet.")
+    if vol >= 80_000_000 and rov < 4:
+        bot += 24
+        reasons.append(f"${vol:,.0f} volume at {rov:.2f}% return on volume looks like a maker book, not a punter.")
+    if hedged >= 35:
+        bot += 16
+        reasons.append(f"{hedged:.1f}% of events have more than one outcome. That is a hedge book.")
+    if median and median < 80 and vol > 2_000_000:
+        bot += 12
+        reasons.append(f"Median ticket ${median:,.0f} is small versus total volume, which fits sliced automated size.")
+    if trade_pct >= 88 and split >= 3:
+        bot += 8
+        reasons.append("Almost all recorded activity is trades plus inventory ops.")
+
+    if rov >= 8:
+        human += 22
+        reasons.append(f"{rov:.2f}% return on volume is fat for a thin-spread bot and fits a directional human or a research desk.")
+    if open_n and open_n <= 10 and rov >= 6:
+        human += 12
+        reasons.append(f"Only {open_n} open positions with a high ROI looks like a short, watched book.")
+    if closed and closed < 60 and float(p.get("favorite_pct") or 0) < 75:
+        human += 8
+        reasons.append("A smaller closed sample that is not all heavy favorites is closer to discretionary picking.")
+
+    if bot >= 45:
+        kind, label = "bot", "Likely bot / automated book"
+    elif bot >= 22 and human >= 18:
+        kind, label = "mixed", "Mixed: human thesis, automated execution"
+    elif human >= 20 and bot < 25:
+        kind, label = "human", "Likely human / discretionary"
+    else:
+        kind, label = "unclear", "Unclear operator. Not enough mechanic tells."
+
+    return {
+        "kind": kind,
+        "label": label,
+        "bot_score": min(100, bot),
+        "human_score": min(100, human),
+        "reasons": reasons[:6],
+    }
+
+
+def information_sources_for(profile: Dict[str, Any]) -> List[Dict[str, str]]:
+    topic = ((profile.get("patterns") or {}).get("dominant_topic") or "other").lower()
+    rows = list(TOPIC_INFORMATION_SOURCES.get(topic, []))
+    rows.extend(TOPIC_INFORMATION_SOURCES["other"])
+    # de-dupe by label
+    seen = set()
+    out = []
+    for row in rows:
+        key = row.get("label")
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append(row)
+    return out[:6]
+
+
+def copy_steps_for(profile: Dict[str, Any], operator: Dict[str, Any]) -> List[str]:
+    p = profile.get("patterns") or {}
+    llm = profile.get("llm_analysis") or {}
+    topic = p.get("dominant_topic") or "the same topic"
+    avg = p.get("avg_entry_price")
+    avg_s = f"{avg:.2f}" if avg is not None else "their last mid"
+    kind = operator.get("kind")
+    label = llm.get("copyability_label") or "Low"
+    if kind == "bot" or label == "Low":
+        return [
+            "Do not copy individual fills. This book is too fast or too hedged for a slower follower.",
+            "If you use it at all, watch only for complete-set / cross-venue gaps they leave behind, and paper those.",
+            "Cap any paper size at a tiny fraction of their median ticket so you are not their exit liquidity.",
+            "Re-check this dossier after the next investigation run. Bot books change inventory rules without notice.",
+        ]
+    return [
+        f"Follow the wallet and wait for a new {topic} fill, same Yes/No side they just took.",
+        f"Only paper-copy if the live mid is within 0.03 of their typical entry ({avg_s}). Skip if the print already moved.",
+        "Skip the trade if they already hold the other outcome on the same event (hedge, not a view).",
+        f"Size down: start at a fraction of their median ticket (${float(p.get('median_trade_usdc') or profile.get('median_position_cost_usd') or 100):,.0f}).",
+        "Log the copy as paper, then compare your fill to theirs 24 hours later before raising size.",
+        llm.get("copy_recommendation") or "Prefer unhedged, high-dollar names in their dominant topic.",
+    ]
+
+
+def how_they_bet(profile: Dict[str, Any]) -> Dict[str, Any]:
+    p = profile.get("patterns") or {}
+    shares = p.get("topic_shares") or {}
+    return {
+        "dominant_topic": p.get("dominant_topic"),
+        "avg_entry_price": p.get("avg_entry_price"),
+        "yes_pct": p.get("yes_pct"),
+        "no_pct": p.get("no_pct"),
+        "longshot_pct": p.get("longshot_pct"),
+        "mid_pct": p.get("mid_pct"),
+        "favorite_pct": p.get("favorite_pct"),
+        "hedged_events_pct": p.get("hedged_events_pct"),
+        "split_merge_pct": p.get("split_merge_pct"),
+        "median_trade_usdc": p.get("median_trade_usdc"),
+        "topic_rows": [
+            {"topic": k, "share": v} for k, v in sorted(shares.items(), key=lambda kv: kv[1], reverse=True)
+        ],
+        "band_rows": [
+            {"band": "Longshot <0.20", "share": p.get("longshot_pct") or 0},
+            {"band": "Mid 0.20-0.80", "share": p.get("mid_pct") or 0},
+            {"band": "Favorite >0.80", "share": p.get("favorite_pct") or 0},
+        ],
+        "side_rows": [
+            {"side": "Yes / Over", "share": p.get("yes_pct") or 0},
+            {"side": "No / Under", "share": p.get("no_pct") or 0},
+        ],
+    }
+
+
+def enrich_account_dossier(account: Dict[str, Any]) -> Dict[str, Any]:
+    """Attach operator, sources, and copy steps on read so old JSON still works."""
+    operator = classify_operator(account)
+    account["dossier"] = {
+        "operator": operator,
+        "sources": information_sources_for(account),
+        "copy_steps": copy_steps_for(account, operator),
+        "how_they_bet": how_they_bet(account),
+    }
+    return account
 
 
 def analyze_trader_with_llm(
@@ -783,6 +1048,8 @@ def build_copyable_signals(accounts: List[Dict[str, Any]], followed_addresses: O
                     "is_followed_trader": is_followed,
                     "condition_id": pos["condition_id"],
                     "title": pos["title"],
+                    "slug": pos.get("slug") or "",
+                    "end_date": pos.get("end_date") or "",
                     "topic": pos["topic"],
                     "outcome": pos["outcome"],
                     "side": pos["side"],

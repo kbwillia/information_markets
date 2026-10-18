@@ -25,6 +25,7 @@ from src.strategies.trading.momentum import MomentumStrategy
 from src.strategies.trading.arbitrage import ArbitrageStrategy
 from src.strategies.trading.complete_set import CompleteSetStrategy
 from src.strategies.trading.copy_top_traders import CopyTopTradersStrategy
+from src.strategies.trading.copy_watchlist import CopyWatchlistStrategy
 from src.config import Config
 
 
@@ -138,7 +139,8 @@ class StrategyRunner:
             'momentum': MomentumStrategy,
             'arbitrage': ArbitrageStrategy,
             'complete_set': CompleteSetStrategy,
-            'copy_top_traders': CopyTopTradersStrategy
+            'copy_top_traders': CopyTopTradersStrategy,
+            'copy_watchlist': CopyWatchlistStrategy,
         }
         
         cls = strategy_classes.get(config.name)
@@ -400,6 +402,8 @@ def create_default_runner(paper_trading: bool = True) -> StrategyRunner:
                        top_traders_count=10, min_trader_pnl=1000.0,
                        min_trader_volume=10000.0, lookback_hours=24,
                        min_confidence=0.6, time_period='ALL')
+    runner.add_strategy('copy_watchlist', enabled=True, weight=1.0, max_signals=20,
+                       lookback_hours=12, max_accounts=8, max_fills_per_account=8)
     
     return runner
 
